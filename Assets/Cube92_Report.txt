@@ -1,0 +1,38 @@
+=== THÔNG TIN VẬT THỂ: Cube (92) ===
+Parent: None (Root)
+Position: (28.58, 2.02, 33.38)
+Rotation: (0.00, 180.00, 0.00)
+LossyScale: (3.83, 2.51, 0.09)
+Renderer Type: MeshRenderer
+Bounds Center: (28.58, 2.02, 33.38), Size: (3.83, 2.51, 0.09)
+Số lượng Materials: 6
+Material [0]: images (1) (Shader: Universal Render Pipeline/Lit, Path: Assets/3d/nội thất/Materials/images (1).mat)
+   -> Texture '_MainTex': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ
+   -> Texture '_BaseMap': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ
+Material [1]: images (1) (Shader: Universal Render Pipeline/Lit, Path: Assets/3d/nội thất/Materials/images (1).mat)
+   -> Texture '_MainTex': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ
+   -> Texture '_BaseMap': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ
+Material [2]: images (1) (Shader: Universal Render Pipeline/Lit, Path: Assets/3d/nội thất/Materials/images (1).mat)
+   -> Texture '_MainTex': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ
+   -> Texture '_BaseMap': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ
+Material [3]: images (1) (Shader: Universal Render Pipeline/Lit, Path: Assets/3d/nội thất/Materials/images (1).mat)
+   -> Texture '_MainTex': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ
+   -> Texture '_BaseMap': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ
+Material [4]: images (1) (Shader: Universal Render Pipeline/Lit, Path: Assets/3d/nội thất/Materials/images (1).mat)
+   -> Texture '_MainTex': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ
+   -> Texture '_BaseMap': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ
+Material [5]: images (1) (Shader: Universal Render Pipeline/Lit, Path: Assets/3d/nội thất/Materials/images (1).mat)
+   -> Texture '_MainTex': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ
+   -> Texture '_BaseMap': images (1) (Size: 512x256, Path: Assets/3d/nội thất/images (1).jpg)
+      Importer: MaxSize=4096, FilterMode=Trilinear, Aniso=16, Mipmap=True, MipmapBias=-0.8, Compression=CompressedHQ

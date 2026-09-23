@@ -1,0 +1,108 @@
+﻿=================================================================
+        BÁO CÁO PHÂN TÍCH CHUYÊN SÂU HIỆU NĂNG BẢO TÀNG         
+=================================================================
+Thời gian: 2026-09-23 22:23:44
+Scene: SampleScene (Đường dẫn: Assets/Scenes/SampleScene.unity, IsLoaded: True)
+
+--- 1. REFLECTION PROBES (7 probe) ---
+  • 'Reflection Probe (4)': Mode=Realtime, RefreshMode=OnAwake, TimeSlicing=AllFacesAtOnce, Resolution=256, BoxSize=(10.00, 3.80, 11.00)
+  • 'Reflection Probe (1)': Mode=Realtime, RefreshMode=OnAwake, TimeSlicing=AllFacesAtOnce, Resolution=256, BoxSize=(10.00, 3.80, 11.00)
+  • 'Reflection Probe (3)': Mode=Realtime, RefreshMode=OnAwake, TimeSlicing=AllFacesAtOnce, Resolution=256, BoxSize=(10.00, 3.80, 11.00)
+  • 'Reflection Probe (2)': Mode=Realtime, RefreshMode=OnAwake, TimeSlicing=AllFacesAtOnce, Resolution=256, BoxSize=(10.00, 3.80, 11.00)
+  • 'TvRoom_ReflectionProbe': Mode=Realtime, RefreshMode=OnAwake, TimeSlicing=IndividualFaces, Resolution=128, BoxSize=(12.00, 6.00, 14.00)
+  • 'Reflection Probe (5)': Mode=Realtime, RefreshMode=OnAwake, TimeSlicing=AllFacesAtOnce, Resolution=256, BoxSize=(10.00, 3.80, 11.00)
+  • 'Reflection Probe': Mode=Realtime, RefreshMode=OnAwake, TimeSlicing=AllFacesAtOnce, Resolution=256, BoxSize=(11.99, 3.80, 11.00)
+
+--- 2. CAMERAS (2 camera) ---
+  • 'Main Camera': FarClip=1000, FOV=60, OcclusionCulling=True, ClearFlags=Skybox
+  • 'Camera': FarClip=1000, FOV=60, OcclusionCulling=True, ClearFlags=Skybox
+
+--- 3. HỆ THỐNG ĐÈN (45 đèn) ---
+  • 'Point Light (1)' (Parent: root): Type=Point, Mode=Realtime, Shadows=None, Range=1000, Intensity=2.5
+  • 'Gallery Spot 5 (43)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (9)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (37)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (41)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=7
+  • 'Spot Light' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=10, Intensity=6
+  • 'Gallery Spot 5 (39)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=7
+  • 'Gallery Spot 5 (32)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (10)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (34)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (45)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot Bench' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (44)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (7)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (1)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Point Light' (Parent: root): Type=Point, Mode=Realtime, Shadows=None, Range=1000, Intensity=10
+  • 'Sun Light' (Parent: root): Type=Directional, Mode=Realtime, Shadows=Soft, Range=10, Intensity=1.1
+  • 'Point Light (4)' (Parent: root): Type=Point, Mode=Realtime, Shadows=None, Range=1000, Intensity=10
+  • 'Gallery Spot 5 (4)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (6)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (40)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=7
+  • 'Gallery Spot 5 (42)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=7
+  • 'Gallery Spot 5 (15)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (33)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'TvScreenLight' (Parent: tivi): Type=Point, Mode=Realtime, Shadows=None, Range=13, Intensity=3
+  • 'Gallery Spot 5 (47)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (46)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (13)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (17)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (18)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (3)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'BorderPointLight' (Parent: _LED_LightBorder_Holder): Type=Point, Mode=Realtime, Shadows=None, Range=3.5, Intensity=2
+  • 'Gallery Spot 5 (38)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (35)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (16)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (31)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (36)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Point Light (3)' (Parent: root): Type=Point, Mode=Realtime, Shadows=None, Range=1000, Intensity=10
+  • 'Gallery Spot 5 (2)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (12)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=2
+  • 'Gallery Spot 5 (11)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (14)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (5)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  • 'Gallery Spot 5 (8)' (Parent: root): Type=Spot, Mode=Realtime, Shadows=None, Range=9, Intensity=6
+  => Tổng Directional: 1, Point: 6, Spot: 38, Đang đổ bóng: 1
+
+--- 4. TỔNG QUAN HÌNH HỌC (GEOMETRY) ---
+  • Tổng MeshRenderer: 1014
+  • Tổng SkinnedMeshRenderer: 322
+  • Tổng Tam Giác (Triangles): 5,316,429
+  • Tổng Đỉnh (Vertices): 3,843,837
+  • Đã gắn Static Batching: 813/1014
+
+--- 5. TOP 25 MÔ HÌNH NẶNG NHẤT (CAO TRIANGLE NHẤT) ---
+   1. 'tripo_node_0061226e-438a-4a2d-8a50-86597ab73060' (Mesh: '', Parent: '1 (2)'): 1,932,103 tris, 1,012,586 verts
+   2. 'chair (2)' (Mesh: 'chair', Parent: '1'): 279,125 tris, 157,079 verts
+   3. 'chair (1)' (Mesh: 'chair', Parent: '1'): 279,125 tris, 157,079 verts
+   4. 'tripo_node_08d7bd56-613e-4b09-94c0-c5e4feaae0be' (Mesh: '', Parent: 'Cây (1)'): 95,324 tris, 61,344 verts
+   5. 'tripo_node_08d7bd56-613e-4b09-94c0-c5e4feaae0be' (Mesh: '', Parent: 'Cây'): 95,324 tris, 61,344 verts
+   6. 'table (1)' (Mesh: '', Parent: 'root'): 54,667 tris, 30,624 verts
+   7. '1789720522046_6587468119155234841_g4083560111675440089_6243280bd69c9bdd8ae6ea636a7c6b7d.jpg_00001 (1)' (Mesh: '', Parent: 'root'): 50,000 tris, 27,089 verts
+   8. '1789720362593_6587468119155234841_g4083560111675440089_325124447e5affe6fd2ed038686ddea0.jpg_00001' (Mesh: '', Parent: 'root'): 49,964 tris, 29,994 verts
+   9. '1789720751897_6587468119155234841_g4083560111675440089_65cf169fd5219d8b319df624232b5139.jpg_00001' (Mesh: '', Parent: 'root'): 49,878 tris, 35,010 verts
+  10. '1789720422505_6587468119155234841_g4083560111675440089_be951d2fdcd77e8ca852df28fd2f7500.jpg_00001' (Mesh: '', Parent: 'root'): 49,768 tris, 31,159 verts
+  11. 'cua' (Mesh: '', Parent: 'root'): 49,543 tris, 33,884 verts
+  12. 'B_rau_nam_00001' (Mesh: '', Parent: 'root'): 44,838 tris, 36,384 verts
+  13. 'M_nong_nu_00001' (Mesh: '', Parent: 'root'): 44,832 tris, 33,901 verts
+  14. 'Xo_dang_nam_00001' (Mesh: '', Parent: 'root'): 44,776 tris, 36,712 verts
+  15. 'Xo_dang_nu_00001' (Mesh: '', Parent: 'root'): 44,746 tris, 33,334 verts
+  16. 'Ma_nu_00001' (Mesh: '', Parent: 'root'): 44,733 tris, 33,382 verts
+  17. 'Ro_mam_nu_00001' (Mesh: '', Parent: 'root'): 44,706 tris, 34,648 verts
+  18. 'B_rau_nu_00001' (Mesh: '', Parent: 'root'): 44,674 tris, 34,947 verts
+  19. 'E_de_nu_00001' (Mesh: '', Parent: 'root'): 44,658 tris, 36,128 verts
+  20. 'Gie_trieng_nu_00001' (Mesh: '', Parent: 'root'): 44,594 tris, 36,395 verts
+  21. 'Gie_trieng_nam_00001' (Mesh: '', Parent: 'root'): 44,592 tris, 36,500 verts
+  22. 'Ba_na_nu_00001' (Mesh: '', Parent: 'root'): 44,554 tris, 35,838 verts
+  23. 'Ro_mam_nam_00001' (Mesh: '', Parent: 'root'): 44,545 tris, 37,235 verts
+  24. 'Gia_rai_nam_00001' (Mesh: '', Parent: 'root'): 44,501 tris, 35,320 verts
+  25. 'Ma_nam_00001' (Mesh: '', Parent: 'root'): 44,389 tris, 34,411 verts
+
+--- 6. CÁC SHADER ĐANG DÙNG (6 shader) ---
+  • Universal Render Pipeline/Lit
+  • Shader Graphs/glTF-pbrMetallicRoughness
+  • Museum/Glossy Wood Mirror Floor
+  • Shader Graphs/glTF-pbrSpecularGlossiness
+  • Universal Render Pipeline/Terrain/Lit
+  • Universal Render Pipeline/Unlit

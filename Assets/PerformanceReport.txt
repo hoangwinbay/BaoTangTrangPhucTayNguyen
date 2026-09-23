@@ -1,0 +1,83 @@
+﻿=== BÁO CÁO CHẨN ĐOÁN HIỆU NĂNG BẢO TÀNG ===
+Thời gian: 9/22/2026 2:00:36 PM
+Scene hiện tại: SampleScene (Path: Assets/Scenes/SampleScene.unity)
+
+--- 1. HỆ THỐNG ĐÈN (LIGHTS) (Tổng cộng: 43) ---
+  - Đèn đổ bóng: 'Gallery Spot 5 (43)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (1)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (7)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (2)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (42)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=7
+  - Đèn đổ bóng: 'Gallery Spot 5 (32)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (31)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot Bench', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (5)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (4)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (40)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=7
+  - Đèn đổ bóng: 'Gallery Spot 5 (34)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (11)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (16)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (41)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=7
+  - Đèn đổ bóng: 'Gallery Spot 5 (15)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (33)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (6)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (8)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (44)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (46)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (35)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (37)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (9)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (45)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (10)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (18)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (36)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (39)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=7
+  - Đèn đổ bóng: 'Gallery Spot 5 (14)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (38)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (3)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (47)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (13)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  - Đèn đổ bóng: 'Gallery Spot 5 (12)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=2
+  - Đèn đổ bóng: 'Sun Light', Type=Directional, Mode=Realtime, Shadows=Soft, Range=10, Intensity=1.1
+  - Đèn đổ bóng: 'Gallery Spot 5 (17)', Type=Spot, Mode=Realtime, Shadows=Soft, Range=9, Intensity=6
+  Tổng Directional: 1, Point: 4, Spot: 38
+  Tổng Đèn Realtime: 43
+  Tổng Đèn ĐỔ BÓNG (Shadow Casters): 38
+
+--- 2. REFLECTION PROBES (Tổng cộng: 6) ---
+  - Probe: 'Reflection Probe (1)', Mode=Realtime, RefreshMode=OnAwake, Resolution=256, TimeSlicing=AllFacesAtOnce
+  - Probe: 'Reflection Probe (4)', Mode=Realtime, RefreshMode=OnAwake, Resolution=256, TimeSlicing=AllFacesAtOnce
+  - Probe: 'Reflection Probe (2)', Mode=Realtime, RefreshMode=OnAwake, Resolution=256, TimeSlicing=AllFacesAtOnce
+  - Probe: 'Reflection Probe (3)', Mode=Realtime, RefreshMode=OnAwake, Resolution=256, TimeSlicing=AllFacesAtOnce
+  - Probe: 'Reflection Probe (5)', Mode=Realtime, RefreshMode=OnAwake, Resolution=256, TimeSlicing=AllFacesAtOnce
+  - Probe: 'Reflection Probe', Mode=Realtime, RefreshMode=OnAwake, Resolution=256, TimeSlicing=AllFacesAtOnce
+
+--- 3. MESH RENDERERS (Tổng cộng: 799) ---
+  Tổng Renderer: 799
+  Ước tính tổng tam giác (Triangles): 5,053,453
+  Đã bật Static Batching: 3/799
+  Đã bật Occluder Static: 3/799
+  Đã bật Occludee Static: 3/799
+  Renderer Cast Shadows: 768/799
+  Renderer Receive Shadows: 799/799
+  Số Materials độc nhất: 114
+  Materials đã bật GPU Instancing: 1/114
+
+--- 4. CAMERAS (Tổng cộng: 1) ---
+  - Camera: 'Camera', FarClip=1000, OcclusionCulling=True, ClearFlags=Skybox
+
+--- 5. THIẾT LẬP URP HIỆN TẠI ---
+  URP Asset Name: Performance URP Config
+  Main Light Shadows: True
+  Main Light Shadowmap Resolution: 4096
+  Additional Lights Rendering Mode: PerPixel
+  Additional Lights Cast Shadows: True
+  Additional Lights Shadowmap Resolution: 2048
+  Additional Lights Per Object Limit: 8
+  Shadow Distance: 50
+  Shadow Cascades: 1
+  SRP Batcher: True
+  MSAA: 4
+  Render Scale: 1
+  GPU Resident Drawer: Disabled
