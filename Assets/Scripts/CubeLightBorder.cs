@@ -61,8 +61,13 @@ public class CubeLightBorder : MonoBehaviour
 #if UNITY_EDITOR
     void OnValidate()
     {
-        // Cập nhật ngay lập tức khi thay đổi thông số trên Inspector trong Editor
-        BuildOrUpdateBorder();
+        // QUAN TRỌNG: Không gọi DestroyImmediate/CreatePrimitive trực tiếp trong OnValidate.
+        // Dùng delayCall để hoãn sang frame tiếp theo (an toàn, không gây crash).
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (this == null) return; // Component có thể bị xoá trước khi callback chạy
+            BuildOrUpdateBorder();
+        };
     }
 #endif
 

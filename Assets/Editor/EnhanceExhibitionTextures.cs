@@ -177,29 +177,31 @@ public class EnhanceExhibitionTexturesWindow : EditorWindow
                     changed = true;
                 }
 
-                if (importer.textureCompression != TextureImporterCompression.Uncompressed)
+                // Dùng CompressedHQ thay vì Uncompressed để tránh ngốn VRAM gây GPU timeout + D3D11 crash.
+                // Uncompressed với 4096px tốn ~67MB VRAM/ảnh; CompressedHQ giảm xuống ~11MB/ảnh mà vẫn sắc nét.
+                if (importer.textureCompression != TextureImporterCompression.CompressedHQ)
                 {
-                    importer.textureCompression = TextureImporterCompression.Uncompressed;
+                    importer.textureCompression = TextureImporterCompression.CompressedHQ;
                     changed = true;
                 }
 
-                // Cấu hình Default platform
+                // Cấu hình Default platform - dùng CompressedHQ để tiết kiệm VRAM
                 TextureImporterPlatformSettings defaultSettings = importer.GetDefaultPlatformTextureSettings();
-                if (defaultSettings.maxTextureSize < 4096 || defaultSettings.textureCompression != TextureImporterCompression.Uncompressed)
+                if (defaultSettings.maxTextureSize < 2048 || defaultSettings.textureCompression != TextureImporterCompression.CompressedHQ)
                 {
-                    defaultSettings.maxTextureSize = 4096;
-                    defaultSettings.textureCompression = TextureImporterCompression.Uncompressed;
+                    defaultSettings.maxTextureSize = Mathf.Min(defaultSettings.maxTextureSize < 2048 ? 2048 : defaultSettings.maxTextureSize, 4096);
+                    defaultSettings.textureCompression = TextureImporterCompression.CompressedHQ;
                     defaultSettings.compressionQuality = 100;
                     importer.SetPlatformTextureSettings(defaultSettings);
                     changed = true;
                 }
 
-                // Cấu hình Standalone platform
+                // Cấu hình Standalone platform - dùng CompressedHQ để tiết kiệm VRAM
                 TextureImporterPlatformSettings pcSettings = importer.GetPlatformTextureSettings("Standalone");
                 if (pcSettings != null && pcSettings.overridden)
                 {
                     pcSettings.maxTextureSize = 4096;
-                    pcSettings.textureCompression = TextureImporterCompression.Uncompressed;
+                    pcSettings.textureCompression = TextureImporterCompression.CompressedHQ;
                     pcSettings.compressionQuality = 100;
                     importer.SetPlatformTextureSettings(pcSettings);
                     changed = true;
