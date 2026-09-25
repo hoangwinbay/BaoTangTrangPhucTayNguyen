@@ -121,6 +121,7 @@ public static class MuseumPerformanceOptimizer
         MeshRenderer[] renderers = UnityEngine.Object.FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var r in renderers)
         {
+            string n = r.gameObject.name.ToLower();
             // Chỉ tắt bóng cho đèn phụ, ống gió và kính trong suốt (không tắt bóng của khung cửa sổ trần và bệ trưng bày)
             if (n.Contains("light_") || n.Contains("led_light") || n.Contains("vent") || 
                 n.Contains("glass") || n.Contains("kinh"))
