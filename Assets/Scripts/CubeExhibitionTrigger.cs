@@ -426,6 +426,7 @@ public class CubeExhibitionTrigger : MonoBehaviour
             else
             {
                 if (promptObj.activeSelf) promptObj.SetActive(false);
+            }
         }
 
         // KIỂM TRA HÀNH ĐỘNG TƯƠNG TÁC (Cả PC và Tay cầm VR Meta Quest 2)
@@ -464,7 +465,7 @@ public class CubeExhibitionTrigger : MonoBehaviour
         {
             // Tự động thu lại nếu người chơi đi quá xa bệ đang mở
             if (MuseumPopupManager.Instance.CurrentTrigger == this &&
-                distance > triggerDistance * 1.5f)
+                effectiveDist > triggerDistance * 1.5f)
             {
                 MuseumPopupManager.Instance.ClosePopup();
             }
