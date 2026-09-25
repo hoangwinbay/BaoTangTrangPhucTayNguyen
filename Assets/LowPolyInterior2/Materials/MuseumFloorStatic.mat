@@ -52,10 +52,10 @@ Material:
     m_Floats:
     - _BumpScale: 0.25
     - _Cull: 0
-    - _Metallic: 0.12
-    - _MirrorBoost: 1.7
+    - _Metallic: 0.5
+    - _MirrorBoost: 3
     - _ReceiveShadows: 1
-    - _Smoothness: 0.985
+    - _Smoothness: 0.9
     - _SpecularHighlights: 1
     - _TileScale: 2.5
     - _UseWorldSpaceUV: 1
