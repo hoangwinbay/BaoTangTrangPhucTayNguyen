@@ -110,6 +110,15 @@ public static class VRInputHelper
     }
 
     /// <summary>
+    /// Kiểm tra người dùng có vừa nhấn nút phụ (Nút B trên tay phải hoặc nút Y trên tay trái) không
+    /// </summary>
+    public static bool IsSecondaryButtonDown()
+    {
+        UpdateInputStates();
+        return isRightSecondaryDown || isLeftSecondaryDown;
+    }
+
+    /// <summary>
     /// Kiểm tra bất kỳ nút tương tác chính nào (Cò trỏ, Nút A/X/B/Y, Nút bóp Grip) vừa được nhấn
     /// </summary>
     public static bool IsAnyVRActionTriggered()
