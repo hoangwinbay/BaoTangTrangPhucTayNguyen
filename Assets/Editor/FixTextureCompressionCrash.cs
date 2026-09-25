@@ -33,7 +33,7 @@ public static class FixTextureCompressionCrash
         // Chỉ chạy 1 lần, không lặp lại mỗi lần recompile
         if (SessionState.GetBool(AlreadyFixedKey, false)) return;
 
-        EditorApplication.delayCall += RunFix;
+        EditorApplication.delayCall += () => RunFix();
     }
 
     [MenuItem("Bảo Tàng/Fix Khẩn Cấp: Reimport Texture Chống Crash D3D11", false, 99)]

@@ -1,4 +1,3 @@
-using System.IO;
 using UnityEngine;
 
 /// <summary>
@@ -71,33 +70,21 @@ public class CubeExhibitionTrigger : MonoBehaviour
     }
 
     /// <summary>
-    /// Nạp Sprite ngón tay nếu chưa được gán trong Inspector
+    /// Nạp Sprite ngón tay nếu chưa được gán trong Inspector.
+    /// Dùng Resources.Load để hoạt động đúng cả trong Editor lẫn APK Android.
     /// </summary>
     public void EnsureFingerSprite()
     {
         if (fingerSprite != null) return;
 
-#if UNITY_EDITOR
-        fingerSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/FingerTapIcon.png");
+        // Ưu tiên Resources.Load (hoạt động trên cả Editor và Android APK)
+        fingerSprite = Resources.Load<Sprite>("FingerTapIcon");
         if (fingerSprite != null) return;
-#endif
 
-        string filePath = Path.Combine(Application.dataPath, "UI/FingerTapIcon.png");
-        if (File.Exists(filePath))
-        {
-            byte[] fileData = File.ReadAllBytes(filePath);
-            Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            if (tex.LoadImage(fileData))
-            {
-                tex.filterMode = FilterMode.Bilinear;
-                fingerSprite = Sprite.Create(
-                    tex,
-                    new Rect(0, 0, tex.width, tex.height),
-                    new Vector2(0.5f, 0.5f),
-                    100f
-                );
-            }
-        }
+#if UNITY_EDITOR
+        // Dự phòng trong Editor: load từ đường dẫn Assets/UI/
+        fingerSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/FingerTapIcon.png");
+#endif
     }
 
     private static Transform globalPromptHolder;
