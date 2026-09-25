@@ -61,7 +61,7 @@ public class CubeExhibitionTrigger : MonoBehaviour
         }
         EnsureFingerSprite();
         UpdateCubeTopPosition();
-        CachePlayerCamera();
+        playerCam = GetActivePlayerCamera();
     }
 
     void OnEnable()
