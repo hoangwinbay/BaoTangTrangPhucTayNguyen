@@ -208,8 +208,9 @@ public class CubeExhibitionTrigger : MonoBehaviour
 
         if (promptRenderer != null)
         {
+            promptRenderer.sharedMaterial = GetFingerSpriteMaterial();
             promptRenderer.color = new Color(iconColor.r, iconColor.g, iconColor.b, 0f);
-            promptRenderer.sortingOrder = 10;
+            promptRenderer.sortingOrder = 100;
         }
 
         // Gắn Collider và XRSimpleInteractable để tia laser từ tay cầm VR có thể trỏ và tương tác trực tiếp vào icon ngón tay
@@ -273,48 +274,73 @@ public class CubeExhibitionTrigger : MonoBehaviour
         baseTopCenter = transform.position + Vector3.up * (transform.lossyScale.y * 0.5f);
     }
 
-    private void CachePlayerCamera()
+    private static Material sharedFingerSpriteMat;
+
+    private static Material GetFingerSpriteMaterial()
     {
-        // Cách 1: Camera.main (tag "MainCamera")
-        if (Camera.main != null)
+        if (sharedFingerSpriteMat != null) return sharedFingerSpriteMat;
+
+        // Ưu tiên shader Sprite Unlit của URP, fallback Sprites/Default hoặc UI/Default
+        Shader s = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+        if (s == null) s = Shader.Find("Sprites/Default");
+        if (s == null) s = Shader.Find("UI/Default");
+        if (s == null) s = Shader.Find("Universal Render Pipeline/Unlit");
+
+        if (s != null)
         {
-            playerCam = Camera.main.transform;
-            Debug.Log($"[CubeExhibitionTrigger] Camera found via Camera.main: {playerCam.name}");
-            return;
+            sharedFingerSpriteMat = new Material(s);
+            sharedFingerSpriteMat.name = "Runtime_FingerSprite_Unlit";
+        }
+        return sharedFingerSpriteMat;
+    }
+
+    /// <summary>
+    /// Luôn tìm đúng Camera đang thực sự ACTIVE và render hình ảnh cho người chơi.
+    /// Khắc phục triệt để lỗi cache nhầm camera bị vô hiệu hóa khi chuyển đổi giữa PC Desktop và kính VR.
+    /// </summary>
+    private Transform GetActivePlayerCamera()
+    {
+        // 1. Nếu playerCam hiện tại vẫn đang active trong scene, tái sử dụng ngay
+        if (playerCam != null && playerCam.gameObject.activeInHierarchy)
+        {
+            return playerCam;
         }
 
-        // Cách 2: Tìm theo tên thường gặp của XR/VR camera
-        string[] camNames = new[] { "Main Camera", "XR Camera", "CenterEyeAnchor", "Camera", "Head" };
-        foreach (string camName in camNames)
+        // 2. Nếu đang chạy trên PC (FPSController đang active)
+        var fps = FindObjectOfType<FPSController>();
+        if (fps != null && fps.gameObject.activeInHierarchy && fps.playerCamera != null && fps.playerCamera.gameObject.activeInHierarchy)
         {
-            var go = GameObject.Find(camName);
-            if (go != null && go.GetComponent<Camera>() != null)
+            playerCam = fps.playerCamera;
+            return playerCam;
+        }
+
+        // 3. Nếu đang chạy trên VR (XROrigin đang active)
+        var xr = FindObjectOfType<Unity.XR.CoreUtils.XROrigin>();
+        if (xr != null && xr.gameObject.activeInHierarchy && xr.Camera != null && xr.Camera.gameObject.activeInHierarchy)
+        {
+            playerCam = xr.Camera.transform;
+            return playerCam;
+        }
+
+        // 4. Ưu tiên Camera.main nếu active trong scene
+        if (Camera.main != null && Camera.main.gameObject.activeInHierarchy)
+        {
+            playerCam = Camera.main.transform;
+            return playerCam;
+        }
+
+        // 5. Quét tất cả Camera trong scene, lấy camera enabled & active đầu tiên
+        Camera[] allCams = FindObjectsOfType<Camera>();
+        foreach (var c in allCams)
+        {
+            if (c.enabled && c.gameObject.activeInHierarchy)
             {
-                playerCam = go.transform;
-                Debug.Log($"[CubeExhibitionTrigger] Camera found by name '{camName}'");
-                return;
+                playerCam = c.transform;
+                return playerCam;
             }
         }
 
-        // Cách 3: FPSController
-        var fps = FindObjectOfType<FPSController>();
-        if (fps != null)
-        {
-            playerCam = fps.playerCamera != null ? fps.playerCamera : fps.transform;
-            Debug.Log($"[CubeExhibitionTrigger] Camera found via FPSController: {playerCam.name}");
-            return;
-        }
-
-        // Cách 4: Tìm bất kỳ Camera nào đang enabled trong scene
-        Camera[] allCams = FindObjectsOfType<Camera>();
-        if (allCams.Length > 0)
-        {
-            playerCam = allCams[0].transform;
-            Debug.LogWarning($"[CubeExhibitionTrigger] Fallback: using first camera found: {playerCam.name}");
-            return;
-        }
-
-        Debug.LogError("[CubeExhibitionTrigger] KHÔNG TÌM THẤY CAMERA nào trong scene! Icon ngón tay sẽ không hiển thị.");
+        return null;
     }
 
     /// <summary>
@@ -334,19 +360,28 @@ public class CubeExhibitionTrigger : MonoBehaviour
 
     void Update()
     {
-        if (playerCam == null)
+        // Luôn đảm bảo lấy đúng Camera đang active (chuyển đổi linh hoạt giữa PC và VR)
+        playerCam = GetActivePlayerCamera();
+        if (playerCam == null) return;
+
+        // Đảm bảo tâm mặt trên của Cube luôn chính xác
+        if (baseTopCenter == Vector3.zero)
         {
-            CachePlayerCamera();
-            if (playerCam == null) return;
+            UpdateCubeTopPosition();
         }
 
-        // Tính khoảng cách từ camera / người chơi đến mặt trên của Cube
-        float distance = Vector3.Distance(playerCam.position, baseTopCenter);
-        isPlayerNear = (distance <= triggerDistance);
+        // Tính khoảng cách từ người chơi đến bệ (tính khoảng cách mặt phẳng XZ kết hợp độ cao)
+        Vector3 camPos = playerCam.position;
+        float horizontalDist = Vector2.Distance(new Vector2(camPos.x, camPos.z), new Vector2(baseTopCenter.x, baseTopCenter.z));
+        float verticalDist = Mathf.Abs(camPos.y - baseTopCenter.y);
+        
+        // Người chơi được coi là ở gần khi khoảng cách ngang <= triggerDistance (mặc định ~3.2m) và độ cao chênh lệch hợp lý
+        float effectiveDist = Vector3.Distance(camPos, baseTopCenter);
+        isPlayerNear = (effectiveDist <= Mathf.Max(triggerDistance, 3.2f)) || (horizontalDist <= 2.8f && verticalDist <= 2.5f);
 
         // Hiệu ứng mờ dần (Fade In / Fade Out)
         float targetAlpha = isPlayerNear ? 1f : 0f;
-        currentAlpha = Mathf.MoveTowards(currentAlpha, targetAlpha, Time.deltaTime * 5f);
+        currentAlpha = Mathf.MoveTowards(currentAlpha, targetAlpha, Time.deltaTime * 6f);
 
         if (promptObj != null)
         {
@@ -367,7 +402,7 @@ public class CubeExhibitionTrigger : MonoBehaviour
                 promptObj.transform.rotation = playerCam.rotation;
 
                 // 4. GÁN TRỰC TIẾP WORLD SCALE (KHÔNG BỊ ẢNH HƯỞNG BỞI ROTATION HAY SCALE CỦA CUBE)
-                float worldScale = fingerScale;
+                float worldScale = Mathf.Max(fingerScale, 0.12f);
                 if (tapMotion > 0.7f)
                 {
                     worldScale *= (1f + (tapMotion - 0.7f) * 0.15f);
@@ -381,13 +416,16 @@ public class CubeExhibitionTrigger : MonoBehaviour
                     {
                         promptRenderer.sprite = fingerSprite;
                     }
+                    if (promptRenderer.sharedMaterial == null)
+                    {
+                        promptRenderer.sharedMaterial = GetFingerSpriteMaterial();
+                    }
                     promptRenderer.color = new Color(iconColor.r, iconColor.g, iconColor.b, currentAlpha);
                 }
             }
             else
             {
                 if (promptObj.activeSelf) promptObj.SetActive(false);
-            }
         }
 
         // KIỂM TRA HÀNH ĐỘNG TƯƠNG TÁC (Cả PC và Tay cầm VR Meta Quest 2)

@@ -149,6 +149,7 @@ public class MuseumVRRigManager : MonoBehaviour
                 // Hướng đi tới trùng khớp với hướng quay đầu của kính HMD
                 if (xrOrigin.Camera != null)
                 {
+                    xrOrigin.Camera.tag = "MainCamera";
                     moveProvider.forwardSource = xrOrigin.Camera.transform;
                 }
             }
@@ -213,6 +214,7 @@ public class MuseumVRRigManager : MonoBehaviour
             pcController.enabled = true;
             if (pcController.playerCamera != null)
             {
+                pcController.playerCamera.tag = "MainCamera";
                 var cam = pcController.playerCamera.GetComponent<Camera>();
                 if (cam != null) cam.enabled = true;
 
