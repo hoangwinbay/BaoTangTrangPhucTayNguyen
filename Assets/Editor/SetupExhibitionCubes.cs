@@ -37,7 +37,7 @@ public static class SetupExhibitionCubes
             if (c56 != null)
             {
                 var trig = c56.GetComponent<CubeExhibitionTrigger>();
-                if (trig == null || trig.fingerScale > 0.15f)
+                if (trig == null || trig.fingerScale > 0.08f || trig.speakerSprite == null)
                 {
                     SetupAllCubes(showDialog: false);
                 }
@@ -54,6 +54,8 @@ public static class SetupExhibitionCubes
     public static void SetupAllCubes(bool showDialog = true)
     {
         Sprite fingerSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/FingerTapIcon.png");
+        Sprite speakerSprite = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/SpeakerIcon.png");
+        AudioClip cube72Audio = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/ThuyetMinh_Cube72.mp3");
         string imageFolder = "Assets/3d/ảnh chi tiết";
 
         int configuredCount = 0;
@@ -79,11 +81,18 @@ public static class SetupExhibitionCubes
 
             trigger.ethnicTitle = item.ethnicName;
             if (fingerSprite != null) trigger.fingerSprite = fingerSprite;
-            trigger.triggerDistance = 2.8f;
-            trigger.heightAboveCube = 0.18f;
-            trigger.fingerScale = 0.12f;
+            if (speakerSprite != null) trigger.speakerSprite = speakerSprite;
+            trigger.triggerDistance = 3.2f;
+            trigger.heightAboveCube = 0.15f;
+            trigger.fingerScale = 0.06f; // Nhỏ bằng một nửa (gấp đôi độ nhỏ)
             trigger.tapSpeed = 3.8f;
-            trigger.tapDepth = 0.05f;
+            trigger.tapDepth = 0.025f;
+
+            // Gán file ghi âm thuyết minh cho Cube (72)
+            if (item.cubeName == "Cube (72)" && cube72Audio != null)
+            {
+                trigger.voiceNarration = cube72Audio;
+            }
 
             // Nạp Texture ảnh thuyết minh mặc định (ưu tiên .png)
             string imgPath = $"{imageFolder}/{item.baseFileName}.png";

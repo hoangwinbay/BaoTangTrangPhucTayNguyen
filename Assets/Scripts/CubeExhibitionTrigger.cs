@@ -2,9 +2,12 @@ using UnityEngine;
 
 /// <summary>
 /// Gắn vào bệ trưng bày (Cube).
-/// Khi người chơi đến gần, biểu tượng ngón tay sẽ xuất hiện trên mặt trên của Cube và thực hiện animation nhấn xuống.
-/// Khi ở gần, người chơi bấm phím Shift (trái hoặc phải) để xem ảnh thuyết minh pop-up ra giữa màn hình.
-/// Bấm Shift lần nữa để thu ảnh lại.
+/// Khi người chơi đến gần (< 3.2m):
+/// - Xuất hiện 2 biểu tượng nằm cạnh nhau trên bệ: Ngón tay trỏ (bên trái) và Loa phát thanh (bên phải).
+/// - Cả 2 icon được thu nhỏ bằng một nửa (scale 0.06f) để gọn gàng, tinh tế trên bệ.
+/// - Nhấn phím Shift (hoặc cò trỏ / nút A trên VR): Mở / thu bảng thông tin thuyết minh.
+/// - Nhấn phím V (hoặc nút B/Y trên VR): Bật / tắt bài đọc thuyết minh ghi âm (không hiển thị thêm giao diện nào).
+/// - Khi người chơi đi ra xa: Âm lượng giọng đọc nhỏ dần rồi tự tắt hẳn. Khi lại gần không tự to lại mà phải nhấn V lại.
 /// </summary>
 public class CubeExhibitionTrigger : MonoBehaviour
 {
@@ -19,26 +22,40 @@ public class CubeExhibitionTrigger : MonoBehaviour
     public string ethnicTitle = "DÂN TỘC TÂY NGUYÊN";
 
     [Header("3. Cài đặt Khoảng cách")]
-    [Tooltip("Khoảng cách tối đa (mét) để ngón tay hiện ra và cho phép bấm Shift")]
-    public float triggerDistance = 2.8f;
+    [Tooltip("Khoảng cách tối đa (mét) để 2 icon hiện ra và cho phép tương tác")]
+    public float triggerDistance = 3.2f;
+    [Tooltip("Khoảng cách người chơi đi xa trước khi bài đọc thuyết minh tự động tắt hẳn")]
+    public float maxAudibleDistance = 5.5f;
 
-    [Header("4. Cài đặt Biểu tượng Ngón tay Nhấn")]
-    [Tooltip("Sprite ngón tay (tự nạp từ Assets/UI/FingerTapIcon.png nếu để trống)")]
+    [Header("4. Cài đặt Biểu tượng (Ngón tay & Loa)")]
+    [Tooltip("Sprite ngón tay (tự nạp từ Assets/Resources/FingerTapIcon.png nếu để trống)")]
     public Sprite fingerSprite;
-    [Tooltip("Kích thước hiển thị của biểu tượng ngón tay")]
-    public float fingerScale = 0.12f;
-    [Tooltip("Độ cao ngón tay lơ lửng phía trên mặt trên của Cube")]
-    public float heightAboveCube = 0.18f;
-    [Tooltip("Tốc độ nhấn ngón tay")]
+    [Tooltip("Sprite chiếc loa (tự nạp từ Assets/Resources/SpeakerIcon.png nếu để trống)")]
+    public Sprite speakerSprite;
+    [Tooltip("Kích thước hiển thị của 2 biểu tượng (0.06f = nhỏ bằng một nửa trước đây)")]
+    public float fingerScale = 0.06f;
+    [Tooltip("Độ cao biểu tượng lơ lửng phía trên mặt trên của Cube")]
+    public float heightAboveCube = 0.15f;
+    [Tooltip("Tốc độ nhấp nhô của ngón tay")]
     public float tapSpeed = 3.8f;
     [Tooltip("Độ nhấp nhô khi ngón tay nhấn xuống")]
-    public float tapDepth = 0.05f;
+    public float tapDepth = 0.025f;
     [Tooltip("Màu sắc và độ sáng của icon")]
     public Color iconColor = Color.white;
 
-    // Thành phần nội bộ
-    private GameObject promptObj;
+    [Header("5. Giọng đọc Thuyết minh (Audio Narration)")]
+    [Tooltip("Gắn file ghi âm giọng đọc thuyết minh vào đây (Cube 72 tự động nạp ThuyetMinh_Cube72 nếu để trống)")]
+    public AudioClip voiceNarration;
+
+    // Thành phần nội bộ cho 2 icon
+    private GameObject promptObj;               // Icon ngón tay
     private SpriteRenderer promptRenderer;
+    private GameObject speakerPromptObj;        // Icon chiếc loa
+    private SpriteRenderer speakerPromptRenderer;
+
+    private AudioSource narrationAudioSource;
+    private bool isNarrationPlaying = false;
+
     private Vector3 baseTopCenter;
     private float currentAlpha = 0f;
     private bool isPlayerNear = false;
@@ -47,19 +64,24 @@ public class CubeExhibitionTrigger : MonoBehaviour
     void Awake()
     {
         EnsureFingerSprite();
-        CreatePromptObject();
+        EnsureSpeakerSprite();
+        EnsureVoiceNarration();
+        CreatePromptObjects();
     }
 
     void Start()
     {
-        // Tự động thu nhỏ scale nếu trước đó bệ mang giá trị cũ quá lớn (> 0.20f)
-        if (fingerScale > 0.20f)
+        // Thu nhỏ scale biểu tượng xuống 0.06f (gấp đôi độ nhỏ trước đây)
+        if (fingerScale > 0.09f)
         {
-            fingerScale = 0.12f;
-            heightAboveCube = 0.18f;
-            tapDepth = 0.05f;
+            fingerScale = 0.06f;
+            heightAboveCube = 0.15f;
+            tapDepth = 0.025f;
         }
+
         EnsureFingerSprite();
+        EnsureSpeakerSprite();
+        EnsureVoiceNarration();
         UpdateCubeTopPosition();
         playerCam = GetActivePlayerCamera();
     }
@@ -70,39 +92,59 @@ public class CubeExhibitionTrigger : MonoBehaviour
     }
 
     /// <summary>
-    /// Nạp Sprite ngón tay. Nếu mọi cách load đều thất bại, tự vẽ sprite
-    /// bằng code để đảm bảo icon luôn hiển thị trên mọi nền tảng.
+    /// Nạp Sprite ngón tay.
     /// </summary>
     public void EnsureFingerSprite()
     {
         if (fingerSprite != null) return;
 
-        // Cách 1: Resources.Load — hoạt động trên cả Editor và Android APK
         fingerSprite = Resources.Load<Sprite>("FingerTapIcon");
-        if (fingerSprite != null)
-        {
-            Debug.Log("[CubeExhibitionTrigger] Loaded FingerTapIcon from Resources.");
-            return;
-        }
+        if (fingerSprite != null) return;
 
 #if UNITY_EDITOR
-        // Cách 2: AssetDatabase — chỉ trong Editor
         fingerSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/FingerTapIcon.png");
-        if (fingerSprite != null)
-        {
-            Debug.Log("[CubeExhibitionTrigger] Loaded FingerTapIcon from AssetDatabase.");
-            return;
-        }
+        if (fingerSprite != null) return;
 #endif
 
-        // Cách 3: Tự vẽ icon ngón tay chỉ trỏ (mũi tên trắng dạng cursor) bằng code
-        Debug.LogWarning("[CubeExhibitionTrigger] FingerTapIcon not found in Resources or AssetDatabase — generating fallback sprite.");
         fingerSprite = GenerateFallbackFingerSprite();
     }
 
     /// <summary>
-    /// Tạo sprite ngón tay trỏ đơn giản bằng code (hình mũi tên trắng trên nền trong suốt).
-    /// Đảm bảo icon luôn hiển thị kể cả khi file ảnh bị thiếu.
+    /// Nạp Sprite chiếc loa phát thanh đã tách nền trong suốt.
+    /// </summary>
+    public void EnsureSpeakerSprite()
+    {
+        if (speakerSprite != null) return;
+
+        speakerSprite = Resources.Load<Sprite>("SpeakerIcon");
+        if (speakerSprite != null) return;
+
+#if UNITY_EDITOR
+        speakerSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/SpeakerIcon.png");
+        if (speakerSprite != null) return;
+#endif
+    }
+
+    /// <summary>
+    /// Tự động nạp file thuyết minh âm thanh cho Cube (72).
+    /// </summary>
+    public void EnsureVoiceNarration()
+    {
+        if (voiceNarration != null) return;
+
+        if (gameObject.name.Contains("72") || ethnicTitle.Contains("Giẻ Triêng") || ethnicTitle.Contains("Rơ Măm"))
+        {
+            voiceNarration = Resources.Load<AudioClip>("Audio/ThuyetMinh_Cube72");
+            if (voiceNarration != null) return;
+
+#if UNITY_EDITOR
+            voiceNarration = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/ThuyetMinh_Cube72.mp3");
+#endif
+        }
+    }
+
+    /// <summary>
+    /// Tạo sprite ngón tay trỏ dự phòng nếu file ảnh bị thiếu
     /// </summary>
     private static Sprite GenerateFallbackFingerSprite()
     {
@@ -110,13 +152,10 @@ public class CubeExhibitionTrigger : MonoBehaviour
         Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
         Color clear = Color.clear;
         Color white = Color.white;
-        Color outline = new Color(0f, 0f, 0f, 0.7f);
 
-        // Xóa nền trong suốt
         Color[] pixels = new Color[size * size];
         for (int i = 0; i < pixels.Length; i++) pixels[i] = clear;
 
-        // Vẽ hình tròn nền trắng mờ (glow)
         Vector2 center = new Vector2(size * 0.5f, size * 0.35f);
         float radius = size * 0.30f;
         for (int y = 0; y < size; y++)
@@ -132,7 +171,6 @@ public class CubeExhibitionTrigger : MonoBehaviour
             }
         }
 
-        // Vẽ thân ngón tay (hình chữ nhật dọc)
         int fingerW = Mathf.RoundToInt(size * 0.18f);
         int fingerH = Mathf.RoundToInt(size * 0.42f);
         int fingerX = Mathf.RoundToInt(center.x) - fingerW / 2;
@@ -141,12 +179,10 @@ public class CubeExhibitionTrigger : MonoBehaviour
         {
             for (int x = fingerX; x < fingerX + fingerW && x < size; x++)
             {
-                if (x >= 0 && y >= 0)
-                    pixels[y * size + x] = white;
+                if (x >= 0 && y >= 0) pixels[y * size + x] = white;
             }
         }
 
-        // Đầu ngón tay (hình bán cầu tròn)
         Vector2 tipCenter = new Vector2(center.x, fingerY + fingerH - 1);
         float tipR = fingerW * 0.55f;
         for (int y = (int)(tipCenter.y - tipR); y <= (int)(tipCenter.y + tipR); y++)
@@ -171,12 +207,10 @@ public class CubeExhibitionTrigger : MonoBehaviour
     private static Transform globalPromptHolder;
 
     /// <summary>
-    /// Tạo GameObject con chứa SpriteRenderer cho ngón tay (tách biệt transform để không bị méo góc/scale)
+    /// Tạo 2 GameObject con chứa SpriteRenderer cho Ngón tay và Loa phát thanh
     /// </summary>
-    private void CreatePromptObject()
+    private void CreatePromptObjects()
     {
-        if (promptObj != null) return;
-
         if (globalPromptHolder == null)
         {
             GameObject holderGo = GameObject.Find("_ExhibitionFingerPrompts");
@@ -187,69 +221,140 @@ public class CubeExhibitionTrigger : MonoBehaviour
             globalPromptHolder = holderGo.transform;
         }
 
-        string promptName = $"FingerPrompt_{gameObject.name}";
-        Transform existing = globalPromptHolder.Find(promptName);
-        if (existing != null)
+        // 1. Tạo hoặc nạp lại Icon Ngón Tay
+        if (promptObj == null)
         {
-            promptObj = existing.gameObject;
-            promptRenderer = promptObj.GetComponent<SpriteRenderer>();
-        }
-        else
-        {
-            promptObj = new GameObject(promptName);
-            promptObj.transform.SetParent(globalPromptHolder, false);
-            promptRenderer = promptObj.AddComponent<SpriteRenderer>();
+            string promptName = $"FingerPrompt_{gameObject.name}";
+            Transform existing = globalPromptHolder.Find(promptName);
+            if (existing != null)
+            {
+                promptObj = existing.gameObject;
+                promptRenderer = promptObj.GetComponent<SpriteRenderer>();
+            }
+            else
+            {
+                promptObj = new GameObject(promptName);
+                promptObj.transform.SetParent(globalPromptHolder, false);
+                promptRenderer = promptObj.AddComponent<SpriteRenderer>();
+            }
+
+            if (fingerSprite != null && promptRenderer != null)
+            {
+                promptRenderer.sprite = fingerSprite;
+            }
+
+            if (promptRenderer != null)
+            {
+                promptRenderer.sharedMaterial = GetFingerSpriteMaterial();
+                promptRenderer.color = new Color(iconColor.r, iconColor.g, iconColor.b, 0f);
+                promptRenderer.sortingOrder = 100;
+            }
+
+            // Gắn collider và tương tác cho ngón tay
+            SphereCollider col = promptObj.GetComponent<SphereCollider>();
+            if (col == null)
+            {
+                col = promptObj.AddComponent<SphereCollider>();
+                col.isTrigger = true;
+                col.radius = 0.15f;
+            }
+
+            var promptInteractable = promptObj.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable>();
+            if (promptInteractable == null)
+            {
+                promptInteractable = promptObj.AddComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable>();
+            }
+            promptInteractable.selectEntered.RemoveAllListeners();
+            promptInteractable.selectEntered.AddListener((args) =>
+            {
+                VRInputHelper.TriggerHapticBoth(0.45f, 0.1f);
+                TriggerInteraction();
+            });
+
+            promptObj.SetActive(false);
         }
 
-        if (fingerSprite != null && promptRenderer != null)
+        // 2. Tạo hoặc nạp lại Icon Chiếc Loa Thuyết Minh
+        if (speakerPromptObj == null)
         {
-            promptRenderer.sprite = fingerSprite;
+            string speakerName = $"SpeakerPrompt_{gameObject.name}";
+            Transform existingSpk = globalPromptHolder.Find(speakerName);
+            if (existingSpk != null)
+            {
+                speakerPromptObj = existingSpk.gameObject;
+                speakerPromptRenderer = speakerPromptObj.GetComponent<SpriteRenderer>();
+            }
+            else
+            {
+                speakerPromptObj = new GameObject(speakerName);
+                speakerPromptObj.transform.SetParent(globalPromptHolder, false);
+                speakerPromptRenderer = speakerPromptObj.AddComponent<SpriteRenderer>();
+            }
+
+            if (speakerSprite != null && speakerPromptRenderer != null)
+            {
+                speakerPromptRenderer.sprite = speakerSprite;
+            }
+
+            if (speakerPromptRenderer != null)
+            {
+                speakerPromptRenderer.sharedMaterial = GetFingerSpriteMaterial();
+                speakerPromptRenderer.color = new Color(iconColor.r, iconColor.g, iconColor.b, 0f);
+                speakerPromptRenderer.sortingOrder = 100;
+            }
+
+            // Gắn collider và tương tác cho icon loa (click laser VR)
+            SphereCollider spkCol = speakerPromptObj.GetComponent<SphereCollider>();
+            if (spkCol == null)
+            {
+                spkCol = speakerPromptObj.AddComponent<SphereCollider>();
+                spkCol.isTrigger = true;
+                spkCol.radius = 0.15f;
+            }
+
+            var spkInteractable = speakerPromptObj.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable>();
+            if (spkInteractable == null)
+            {
+                spkInteractable = speakerPromptObj.AddComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable>();
+            }
+            spkInteractable.selectEntered.RemoveAllListeners();
+            spkInteractable.selectEntered.AddListener((args) =>
+            {
+                PlayVoiceNarration();
+            });
+
+            speakerPromptObj.SetActive(false);
         }
 
-        if (promptRenderer != null)
+        // 3. AudioSource phát thuyết minh
+        if (narrationAudioSource == null)
         {
-            promptRenderer.sharedMaterial = GetFingerSpriteMaterial();
-            promptRenderer.color = new Color(iconColor.r, iconColor.g, iconColor.b, 0f);
-            promptRenderer.sortingOrder = 100;
+            narrationAudioSource = GetComponent<AudioSource>();
+            if (narrationAudioSource == null)
+            {
+                narrationAudioSource = gameObject.AddComponent<AudioSource>();
+            }
+            narrationAudioSource.playOnAwake = false;
+            narrationAudioSource.loop = false;
+            narrationAudioSource.spatialBlend = 0f; // 2D âm thanh stereo trong trẻo hai tai, điều khiển âm lượng theo khoảng cách
         }
-
-        // Gắn Collider và XRSimpleInteractable để tia laser từ tay cầm VR có thể trỏ và tương tác trực tiếp vào icon ngón tay
-        SphereCollider col = promptObj.GetComponent<SphereCollider>();
-        if (col == null)
-        {
-            col = promptObj.AddComponent<SphereCollider>();
-            col.isTrigger = true;
-            col.radius = 0.25f;
-        }
-
-        var promptInteractable = promptObj.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable>();
-        if (promptInteractable == null)
-        {
-            promptInteractable = promptObj.AddComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable>();
-        }
-        promptInteractable.selectEntered.RemoveAllListeners();
-        promptInteractable.selectEntered.AddListener((args) =>
-        {
-            VRInputHelper.TriggerHapticBoth(0.45f, 0.1f);
-            TriggerInteraction();
-        });
-        promptInteractable.hoverEntered.RemoveAllListeners();
-        promptInteractable.hoverEntered.AddListener((args) =>
-        {
-            VRInputHelper.TriggerHapticBoth(0.18f, 0.04f);
-        });
-
-        promptObj.SetActive(false);
     }
 
     void OnDisable()
     {
         if (promptObj != null) promptObj.SetActive(false);
+        if (speakerPromptObj != null) speakerPromptObj.SetActive(false);
+        if (narrationAudioSource != null && narrationAudioSource.isPlaying)
+        {
+            narrationAudioSource.Stop();
+            isNarrationPlaying = false;
+        }
     }
 
     void OnDestroy()
     {
         if (promptObj != null) Destroy(promptObj);
+        if (speakerPromptObj != null) Destroy(speakerPromptObj);
     }
 
     /// <summary>
@@ -280,7 +385,6 @@ public class CubeExhibitionTrigger : MonoBehaviour
     {
         if (sharedFingerSpriteMat != null) return sharedFingerSpriteMat;
 
-        // Ưu tiên shader Sprite Unlit của URP, fallback Sprites/Default hoặc UI/Default
         Shader s = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
         if (s == null) s = Shader.Find("Sprites/Default");
         if (s == null) s = Shader.Find("UI/Default");
@@ -296,17 +400,14 @@ public class CubeExhibitionTrigger : MonoBehaviour
 
     /// <summary>
     /// Luôn tìm đúng Camera đang thực sự ACTIVE và render hình ảnh cho người chơi.
-    /// Khắc phục triệt để lỗi cache nhầm camera bị vô hiệu hóa khi chuyển đổi giữa PC Desktop và kính VR.
     /// </summary>
     private Transform GetActivePlayerCamera()
     {
-        // 1. Nếu playerCam hiện tại vẫn đang active trong scene, tái sử dụng ngay
         if (playerCam != null && playerCam.gameObject.activeInHierarchy)
         {
             return playerCam;
         }
 
-        // 2. Nếu đang chạy trên PC (FPSController đang active)
         var fps = FindObjectOfType<FPSController>();
         if (fps != null && fps.gameObject.activeInHierarchy && fps.playerCamera != null && fps.playerCamera.gameObject.activeInHierarchy)
         {
@@ -314,7 +415,6 @@ public class CubeExhibitionTrigger : MonoBehaviour
             return playerCam;
         }
 
-        // 3. Nếu đang chạy trên VR (XROrigin đang active)
         var xr = FindObjectOfType<Unity.XR.CoreUtils.XROrigin>();
         if (xr != null && xr.gameObject.activeInHierarchy && xr.Camera != null && xr.Camera.gameObject.activeInHierarchy)
         {
@@ -322,14 +422,12 @@ public class CubeExhibitionTrigger : MonoBehaviour
             return playerCam;
         }
 
-        // 4. Ưu tiên Camera.main nếu active trong scene
         if (Camera.main != null && Camera.main.gameObject.activeInHierarchy)
         {
             playerCam = Camera.main.transform;
             return playerCam;
         }
 
-        // 5. Quét tất cả Camera trong scene, lấy camera enabled & active đầu tiên
         Camera[] allCams = FindObjectsOfType<Camera>();
         foreach (var c in allCams)
         {
@@ -344,7 +442,7 @@ public class CubeExhibitionTrigger : MonoBehaviour
     }
 
     /// <summary>
-    /// Kích hoạt mở bảng thuyết minh (gọi từ nút bấm, tia raycast, hoặc tương tác VR)
+    /// Kích hoạt mở bảng thuyết minh hình ảnh (gọi từ nút Shift hoặc tương tác VR)
     /// </summary>
     public void TriggerInteraction()
     {
@@ -358,24 +456,58 @@ public class CubeExhibitionTrigger : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Bật hoặc tắt giọng đọc thuyết minh khi bấm phím V (hoặc tương tác VR).
+    /// Nhấn V sẽ không hiển thị thêm bất kỳ giao diện nào.
+    /// </summary>
+    public void PlayVoiceNarration()
+    {
+        EnsureVoiceNarration();
+
+        if (voiceNarration == null)
+        {
+            Debug.LogWarning($"[CubeExhibitionTrigger] Chưa có file ghi âm thuyết minh cho '{gameObject.name}' ({ethnicTitle})!");
+            return;
+        }
+
+        if (narrationAudioSource == null)
+        {
+            narrationAudioSource = GetComponent<AudioSource>();
+            if (narrationAudioSource == null) narrationAudioSource = gameObject.AddComponent<AudioSource>();
+        }
+
+        if (isNarrationPlaying && narrationAudioSource.isPlaying)
+        {
+            // Nhấn V lần nữa khi đang nghe -> Tắt
+            narrationAudioSource.Stop();
+            isNarrationPlaying = false;
+        }
+        else
+        {
+            // Bắt đầu phát giọng đọc thuyết minh
+            narrationAudioSource.clip = voiceNarration;
+            narrationAudioSource.volume = 1f;
+            narrationAudioSource.Play();
+            isNarrationPlaying = true;
+            VRInputHelper.TriggerHapticBoth(0.35f, 0.08f);
+        }
+    }
+
     void Update()
     {
-        // Luôn đảm bảo lấy đúng Camera đang active (chuyển đổi linh hoạt giữa PC và VR)
         playerCam = GetActivePlayerCamera();
         if (playerCam == null) return;
 
-        // Đảm bảo tâm mặt trên của Cube luôn chính xác
         if (baseTopCenter == Vector3.zero)
         {
             UpdateCubeTopPosition();
         }
 
-        // Tính khoảng cách từ người chơi đến bệ (tính khoảng cách mặt phẳng XZ kết hợp độ cao)
+        // Tính khoảng cách từ người chơi đến bệ
         Vector3 camPos = playerCam.position;
         float horizontalDist = Vector2.Distance(new Vector2(camPos.x, camPos.z), new Vector2(baseTopCenter.x, baseTopCenter.z));
         float verticalDist = Mathf.Abs(camPos.y - baseTopCenter.y);
         
-        // Người chơi được coi là ở gần khi khoảng cách ngang <= triggerDistance (mặc định ~3.2m) và độ cao chênh lệch hợp lý
         float effectiveDist = Vector3.Distance(camPos, baseTopCenter);
         isPlayerNear = (effectiveDist <= Mathf.Max(triggerDistance, 3.2f)) || (horizontalDist <= 2.8f && verticalDist <= 2.5f);
 
@@ -383,77 +515,120 @@ public class CubeExhibitionTrigger : MonoBehaviour
         float targetAlpha = isPlayerNear ? 1f : 0f;
         currentAlpha = Mathf.MoveTowards(currentAlpha, targetAlpha, Time.deltaTime * 6f);
 
-        if (promptObj != null)
+        // --- 1. HIỂN THỊ CẢ 2 BIỂU TƯỢNG (NGÓN TAY VÀ LOA NẰM CẠNH NHAU) ---
+        if (currentAlpha > 0.001f)
         {
-            if (currentAlpha > 0.001f)
+            if (promptObj != null && !promptObj.activeSelf) promptObj.SetActive(true);
+            if (speakerPromptObj != null && !speakerPromptObj.activeSelf) speakerPromptObj.SetActive(true);
+
+            // Tính toán chuyển động nhấp nhô của ngón tay
+            float cycle = (Time.time * tapSpeed) % (Mathf.PI * 2f);
+            float tapMotion = Mathf.Max(0f, Mathf.Sin(cycle));
+            tapMotion = Mathf.Pow(tapMotion, 1.8f);
+            float fingerY = baseTopCenter.y + heightAboveCube - (tapMotion * tapDepth);
+            float speakerY = baseTopCenter.y + heightAboveCube;
+
+            // Đặt 2 icon nằm cạnh nhau vuông góc với hướng nhìn người chơi (cách tâm 0.045m mỗi bên)
+            Vector3 camRight = playerCam.right;
+            float iconOffset = 0.045f;
+
+            if (promptObj != null)
             {
-                if (!promptObj.activeSelf) promptObj.SetActive(true);
-
-                // 1. ANIMATION NHẤN NGÓN TAY (Tapping motion)
-                float cycle = (Time.time * tapSpeed) % (Mathf.PI * 2f);
-                float tapMotion = Mathf.Max(0f, Mathf.Sin(cycle));
-                tapMotion = Mathf.Pow(tapMotion, 1.8f); // Gia tốc cho động tác nhấn tự nhiên
-                float currentY = baseTopCenter.y + heightAboveCube - (tapMotion * tapDepth);
-
-                // 2. GIỮ ĐÚNG TỌA ĐỘ THẾ GIỚI
-                promptObj.transform.position = new Vector3(baseTopCenter.x, currentY, baseTopCenter.z);
-
-                // 3. BILLBOARD HƯỚNG VỀ CAMERA
+                promptObj.transform.position = new Vector3(baseTopCenter.x, fingerY, baseTopCenter.z) - camRight * iconOffset;
                 promptObj.transform.rotation = playerCam.rotation;
+                promptObj.transform.localScale = Vector3.one * fingerScale;
 
-                // 4. GÁN TRỰC TIẾP WORLD SCALE (KHÔNG BỊ ẢNH HƯỞNG BỞI ROTATION HAY SCALE CỦA CUBE)
-                float worldScale = Mathf.Max(fingerScale, 0.12f);
-                if (tapMotion > 0.7f)
-                {
-                    worldScale *= (1f + (tapMotion - 0.7f) * 0.15f);
-                }
-                promptObj.transform.localScale = Vector3.one * worldScale;
-
-                // 5. CẬP NHẬT ALPHA VÀ SPRITE CHO RENDERER
                 if (promptRenderer != null)
                 {
-                    if (fingerSprite != null && promptRenderer.sprite != fingerSprite)
-                    {
-                        promptRenderer.sprite = fingerSprite;
-                    }
-                    if (promptRenderer.sharedMaterial == null)
-                    {
-                        promptRenderer.sharedMaterial = GetFingerSpriteMaterial();
-                    }
+                    if (fingerSprite != null && promptRenderer.sprite != fingerSprite) promptRenderer.sprite = fingerSprite;
+                    if (promptRenderer.sharedMaterial == null) promptRenderer.sharedMaterial = GetFingerSpriteMaterial();
                     promptRenderer.color = new Color(iconColor.r, iconColor.g, iconColor.b, currentAlpha);
                 }
             }
+
+            if (speakerPromptObj != null)
+            {
+                speakerPromptObj.transform.position = new Vector3(baseTopCenter.x, speakerY, baseTopCenter.z) + camRight * iconOffset;
+                speakerPromptObj.transform.rotation = playerCam.rotation;
+
+                // Hiệu ứng nhịp đập nhẹ của loa khi đang phát âm thanh
+                float pulse = (isNarrationPlaying && narrationAudioSource != null && narrationAudioSource.isPlaying) ?
+                    (1f + Mathf.Sin(Time.time * 8f) * 0.08f) : 1f;
+                speakerPromptObj.transform.localScale = Vector3.one * (fingerScale * pulse);
+
+                if (speakerPromptRenderer != null)
+                {
+                    if (speakerSprite != null && speakerPromptRenderer.sprite != speakerSprite) speakerPromptRenderer.sprite = speakerSprite;
+                    if (speakerPromptRenderer.sharedMaterial == null) speakerPromptRenderer.sharedMaterial = GetFingerSpriteMaterial();
+
+                    // Khi đang phát, icon loa hơi sáng vàng nổi bật
+                    Color spkColor = (isNarrationPlaying && narrationAudioSource != null && narrationAudioSource.isPlaying) ?
+                        new Color(1f, 0.95f, 0.5f, currentAlpha) : new Color(iconColor.r, iconColor.g, iconColor.b, currentAlpha);
+                    speakerPromptRenderer.color = spkColor;
+                }
+            }
+        }
+        else
+        {
+            if (promptObj != null && promptObj.activeSelf) promptObj.SetActive(false);
+            if (speakerPromptObj != null && speakerPromptObj.activeSelf) speakerPromptObj.SetActive(false);
+        }
+
+        // --- 2. QUẢN LÝ ÂM LƯỢNG GIỌNG ĐỌC KHI ĐI XA / LẠI GẦN ---
+        if (isNarrationPlaying && narrationAudioSource != null)
+        {
+            if (!narrationAudioSource.isPlaying)
+            {
+                // File âm thanh đã chạy hết tự nhiên
+                isNarrationPlaying = false;
+            }
             else
             {
-                if (promptObj.activeSelf) promptObj.SetActive(false);
+                // Khi người chơi đi ra xa, âm lượng nhỏ dần
+                float fadeStart = Mathf.Max(triggerDistance, 3.2f);
+                float fadeEnd = Mathf.Max(maxAudibleDistance, fadeStart + 2.0f);
+
+                if (effectiveDist <= fadeStart)
+                {
+                    narrationAudioSource.volume = 1f;
+                }
+                else if (effectiveDist <= fadeEnd)
+                {
+                    float t = (effectiveDist - fadeStart) / (fadeEnd - fadeStart);
+                    narrationAudioSource.volume = Mathf.Clamp01(1f - t);
+                }
+                else
+                {
+                    // Đi ra quá xa -> TẮT HẲN!
+                    narrationAudioSource.Stop();
+                    isNarrationPlaying = false;
+                    narrationAudioSource.volume = 1f; // reset volume cho lần nhấn sau
+                    // LƯU Ý: isNarrationPlaying lúc này = false, nên khi lại gần sẽ KHÔNG tự to lại, người chơi phải bấm V lại.
+                }
             }
         }
 
-        // KIỂM TRA HÀNH ĐỘNG TƯƠNG TÁC (Cả PC và Tay cầm VR Meta Quest 2)
-        bool userInteracted = false;
-
-        // 1. Phím Shift / E / Space trên PC
-        if (Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift) ||
-            Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Space))
+        // --- 3. PHÍM V: BẬT / TẮT GIỌNG THUYẾT MINH (KHÔNG HIỂN THỊ GÌ THÊM) ---
+        bool audioAction = Input.GetKeyDown(KeyCode.V) || VRInputHelper.IsSecondaryButtonDown();
+        if (isPlayerNear && audioAction)
         {
-            userInteracted = true;
+            if (IsClosestTriggerToPlayer())
+            {
+                PlayVoiceNarration();
+            }
         }
 
-        // 2. Nút bấm trên tay cầm VR Meta Quest 2 (Cò trỏ Index Trigger, nút A, nút X, hoặc nút bóp Grip)
-        if (VRInputHelper.IsTriggerDown() || VRInputHelper.IsPrimaryButtonDown() || VRInputHelper.IsAnyVRActionTriggered())
-        {
-            userInteracted = true;
-        }
+        // --- 4. PHÍM SHIFT: MỞ POPUP CARD HÌNH ẢNH ---
+        bool popupAction = Input.GetKeyDown(KeyCode.LeftShift) || Input.GetKeyDown(KeyCode.RightShift) ||
+                           Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Space) ||
+                           VRInputHelper.IsTriggerDown() || VRInputHelper.IsPrimaryButtonDown();
 
-        // LẮNG NGHE KHI Ở ĐỦ GẦN (Chỉ kích hoạt khi Popup CHƯA mở để tránh lỗi chớp tắt cùng frame)
         if (MuseumPopupManager.Instance != null && !MuseumPopupManager.Instance.IsOpen)
         {
-            if (isPlayerNear && userInteracted)
+            if (isPlayerNear && popupAction)
             {
-                // Debounce sau khi vừa đóng popup
                 if (Time.unscaledTime - MuseumPopupManager.lastToggleTime > 0.22f)
                 {
-                    // Chỉ cho phép bệ gần người chơi nhất mở popup (tránh xung đột khi đứng giữa 2 bệ)
                     if (IsClosestTriggerToPlayer())
                     {
                         TriggerInteraction();
@@ -463,7 +638,6 @@ public class CubeExhibitionTrigger : MonoBehaviour
         }
         else if (!isPlayerNear && MuseumPopupManager.Instance != null && MuseumPopupManager.Instance.IsOpen)
         {
-            // Tự động thu lại nếu người chơi đi quá xa bệ đang mở
             if (MuseumPopupManager.Instance.CurrentTrigger == this &&
                 effectiveDist > triggerDistance * 1.5f)
             {
@@ -473,7 +647,7 @@ public class CubeExhibitionTrigger : MonoBehaviour
     }
 
     /// <summary>
-    /// Kiểm tra xem bệ này có phải là bệ gần camera người chơi nhất trong số các bệ hợp lệ hay không
+    /// Kiểm tra xem bệ này có phải là bệ gần camera người chơi nhất hay không
     /// </summary>
     private bool IsClosestTriggerToPlayer()
     {
