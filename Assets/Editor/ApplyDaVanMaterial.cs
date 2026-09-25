@@ -15,6 +15,8 @@ public static class ApplyDaVanMaterial
     {
         EditorApplication.delayCall += () =>
         {
+            // Không chạy trong Play Mode — MarkSceneDirty/SaveScene không được phép lúc play
+            if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             Apply(showDialog: false);
         };
     }
@@ -27,6 +29,9 @@ public static class ApplyDaVanMaterial
 
     public static void Apply(bool showDialog = false)
     {
+        // Không thực thi trong Play Mode — các API Editor (MarkSceneDirty, SaveScene) không hợp lệ lúc play
+        if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+
         // 1. Configure texture import settings
         ConfigureTextures();
 
