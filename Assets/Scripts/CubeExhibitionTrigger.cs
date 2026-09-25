@@ -32,14 +32,20 @@ public class CubeExhibitionTrigger : MonoBehaviour
     public Sprite fingerSprite;
     [Tooltip("Sprite chiếc loa (tự nạp từ Assets/Resources/SpeakerIcon.png nếu để trống)")]
     public Sprite speakerSprite;
-    [Tooltip("Kích thước hiển thị của 2 biểu tượng (0.06f = nhỏ bằng một nửa trước đây)")]
-    public float fingerScale = 0.06f;
-    [Tooltip("Độ cao biểu tượng lơ lửng phía trên mặt trên của Cube")]
+    [Tooltip("Kích thước hiển thị của 2 biểu tượng (0.032f: nhỏ gọn, tinh tế)")]
+    public float fingerScale = 0.032f;
+    [Tooltip("Khoảng cách tách rời giữa 2 biểu tượng từ tâm (0.16m = 2 icon cách nhau 32cm, không bị lồng vào nhau)")]
+    public float iconSpacing = 0.16f;
+    [Tooltip("Độ cao của icon so với cạnh dưới (đáy) của Cube (mét)")]
+    public float heightFromBottom = 0.15f;
+    [Tooltip("Độ nhô ra phía trước mặt bệ Cube theo hướng người chơi (mét)")]
+    public float forwardOffset = 0.08f;
+    [Tooltip("Độ cao biểu tượng lơ lửng phía trên mặt trên của Cube (cho phiên bản cũ)")]
     public float heightAboveCube = 0.15f;
     [Tooltip("Tốc độ nhấp nhô của ngón tay")]
     public float tapSpeed = 3.8f;
     [Tooltip("Độ nhấp nhô khi ngón tay nhấn xuống")]
-    public float tapDepth = 0.025f;
+    public float tapDepth = 0.015f;
     [Tooltip("Màu sắc và độ sáng của icon")]
     public Color iconColor = Color.white;
 
@@ -63,6 +69,7 @@ public class CubeExhibitionTrigger : MonoBehaviour
 
     void Awake()
     {
+        ApplyIconSettings();
         EnsureFingerSprite();
         EnsureSpeakerSprite();
         EnsureVoiceNarration();
@@ -71,19 +78,32 @@ public class CubeExhibitionTrigger : MonoBehaviour
 
     void Start()
     {
-        // Thu nhỏ scale biểu tượng xuống 0.06f (gấp đôi độ nhỏ trước đây)
-        if (fingerScale > 0.09f)
-        {
-            fingerScale = 0.06f;
-            heightAboveCube = 0.15f;
-            tapDepth = 0.025f;
-        }
-
+        ApplyIconSettings();
         EnsureFingerSprite();
         EnsureSpeakerSprite();
         EnsureVoiceNarration();
         UpdateCubeTopPosition();
         playerCam = GetActivePlayerCamera();
+    }
+
+    private void ApplyIconSettings()
+    {
+        if (fingerScale > 0.045f)
+        {
+            fingerScale = 0.032f;
+        }
+        if (iconSpacing < 0.12f)
+        {
+            iconSpacing = 0.16f;
+        }
+        if (heightFromBottom <= 0.01f)
+        {
+            heightFromBottom = 0.15f;
+        }
+        if (forwardOffset <= 0.01f)
+        {
+            forwardOffset = 0.08f;
+        }
     }
 
     void OnEnable()
@@ -256,8 +276,8 @@ public class CubeExhibitionTrigger : MonoBehaviour
             {
                 col = promptObj.AddComponent<SphereCollider>();
                 col.isTrigger = true;
-                col.radius = 0.15f;
             }
+            col.radius = 0.12f / Mathf.Max(fingerScale, 0.001f);
 
             var promptInteractable = promptObj.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable>();
             if (promptInteractable == null)
@@ -309,8 +329,8 @@ public class CubeExhibitionTrigger : MonoBehaviour
             {
                 spkCol = speakerPromptObj.AddComponent<SphereCollider>();
                 spkCol.isTrigger = true;
-                spkCol.radius = 0.15f;
             }
+            spkCol.radius = 0.12f / Mathf.Max(fingerScale, 0.001f);
 
             var spkInteractable = speakerPromptObj.GetComponent<UnityEngine.XR.Interaction.Toolkit.Interactables.XRSimpleInteractable>();
             if (spkInteractable == null)
@@ -515,26 +535,93 @@ public class CubeExhibitionTrigger : MonoBehaviour
         float targetAlpha = isPlayerNear ? 1f : 0f;
         currentAlpha = Mathf.MoveTowards(currentAlpha, targetAlpha, Time.deltaTime * 6f);
 
-        // --- 1. HIỂN THỊ CẢ 2 BIỂU TƯỢNG (NGÓN TAY VÀ LOA NẰM CẠNH NHAU) ---
+        // --- 1. HIỂN THỊ CẢ 2 BIỂU TƯỢNG (NGÓN TAY VÀ LOA NẰM TÁCH RỜI TẠI CẠNH DƯỚI CỦA CUBE) ---
         if (currentAlpha > 0.001f)
         {
             if (promptObj != null && !promptObj.activeSelf) promptObj.SetActive(true);
             if (speakerPromptObj != null && !speakerPromptObj.activeSelf) speakerPromptObj.SetActive(true);
 
+            // Xác định toạ độ cạnh dưới của Cube
+            float cubeBottomY;
+            float cubeTopY;
+            Vector3 cubeCenter;
+            Renderer rend = GetComponent<Renderer>();
+            Collider cubeCol = GetComponent<Collider>();
+
+            if (rend != null)
+            {
+                cubeBottomY = rend.bounds.min.y;
+                cubeTopY = rend.bounds.max.y;
+                cubeCenter = rend.bounds.center;
+            }
+            else if (cubeCol != null)
+            {
+                cubeBottomY = cubeCol.bounds.min.y;
+                cubeTopY = cubeCol.bounds.max.y;
+                cubeCenter = cubeCol.bounds.center;
+            }
+            else
+            {
+                cubeBottomY = transform.position.y - transform.lossyScale.y * 0.5f;
+                cubeTopY = transform.position.y + transform.lossyScale.y * 0.5f;
+                cubeCenter = transform.position;
+            }
+
+            // Độ cao tại cạnh dưới của Cube (cách mặt đất / đáy một khoảng heightFromBottom)
+            float targetY = cubeBottomY + heightFromBottom;
+            float midY = (cubeBottomY + cubeTopY) * 0.5f;
+            if (targetY > midY)
+            {
+                targetY = Mathf.Lerp(cubeBottomY, cubeTopY, 0.2f);
+            }
+
+            // Hướng từ tâm Cube tới camera người chơi (phương nằm ngang)
+            Vector3 toCam = playerCam.position - cubeCenter;
+            toCam.y = 0f;
+            Vector3 dirToCam = toCam.sqrMagnitude > 0.001f ? toCam.normalized : transform.forward;
+
+            // Điểm trên bề mặt cạnh dưới của Cube quay về phía người chơi
+            Vector3 iconCenter;
+            if (cubeCol != null)
+            {
+                Vector3 testPoint = new Vector3(playerCam.position.x, targetY, playerCam.position.z);
+                Vector3 surfacePoint = cubeCol.ClosestPoint(testPoint);
+                surfacePoint.y = targetY;
+                iconCenter = surfacePoint + dirToCam * forwardOffset;
+            }
+            else if (rend != null)
+            {
+                float halfExt = Mathf.Max(rend.bounds.extents.x, rend.bounds.extents.z);
+                iconCenter = new Vector3(cubeCenter.x, targetY, cubeCenter.z) + dirToCam * (halfExt + forwardOffset);
+            }
+            else
+            {
+                float halfExt = Mathf.Max(transform.lossyScale.x, transform.lossyScale.z) * 0.5f;
+                iconCenter = new Vector3(cubeCenter.x, targetY, cubeCenter.z) + dirToCam * (halfExt + forwardOffset);
+            }
+
+            // Trục ngang vuông góc với hướng nhìn người chơi (song song với mặt đất)
+            Vector3 camRight = playerCam.right;
+            camRight.y = 0f;
+            if (camRight.sqrMagnitude > 0.001f)
+            {
+                camRight.Normalize();
+            }
+            else
+            {
+                camRight = Vector3.Cross(Vector3.up, dirToCam).normalized;
+            }
+
             // Tính toán chuyển động nhấp nhô của ngón tay
             float cycle = (Time.time * tapSpeed) % (Mathf.PI * 2f);
             float tapMotion = Mathf.Max(0f, Mathf.Sin(cycle));
             tapMotion = Mathf.Pow(tapMotion, 1.8f);
-            float fingerY = baseTopCenter.y + heightAboveCube - (tapMotion * tapDepth);
-            float speakerY = baseTopCenter.y + heightAboveCube;
+            float fingerAnimOffset = -(tapMotion * tapDepth);
 
-            // Đặt 2 icon nằm cạnh nhau vuông góc với hướng nhìn người chơi (cách tâm 0.045m mỗi bên)
-            Vector3 camRight = playerCam.right;
-            float iconOffset = 0.045f;
-
+            // Icon 1: Ngón tay trỏ nằm bên trái (cách tâm iconSpacing mét)
             if (promptObj != null)
             {
-                promptObj.transform.position = new Vector3(baseTopCenter.x, fingerY, baseTopCenter.z) - camRight * iconOffset;
+                promptObj.transform.position = iconCenter - camRight * iconSpacing + Vector3.up * fingerAnimOffset;
                 promptObj.transform.rotation = playerCam.rotation;
                 promptObj.transform.localScale = Vector3.one * fingerScale;
 
@@ -546,9 +633,10 @@ public class CubeExhibitionTrigger : MonoBehaviour
                 }
             }
 
+            // Icon 2: Chiếc loa thuyết minh nằm bên phải (cách tâm iconSpacing mét)
             if (speakerPromptObj != null)
             {
-                speakerPromptObj.transform.position = new Vector3(baseTopCenter.x, speakerY, baseTopCenter.z) + camRight * iconOffset;
+                speakerPromptObj.transform.position = iconCenter + camRight * iconSpacing;
                 speakerPromptObj.transform.rotation = playerCam.rotation;
 
                 // Hiệu ứng nhịp đập nhẹ của loa khi đang phát âm thanh
@@ -673,7 +761,14 @@ public class CubeExhibitionTrigger : MonoBehaviour
         UpdateCubeTopPosition();
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(baseTopCenter, triggerDistance);
+
+        Renderer rend = GetComponent<Renderer>();
+        Collider col = GetComponent<Collider>();
+        float cubeBottomY = rend != null ? rend.bounds.min.y : (col != null ? col.bounds.min.y : transform.position.y);
+        Vector3 gizmoCenter = transform.position;
+        gizmoCenter.y = cubeBottomY + heightFromBottom;
+
         Gizmos.color = Color.cyan;
-        Gizmos.DrawSphere(baseTopCenter + Vector3.up * heightAboveCube, 0.05f);
+        Gizmos.DrawWireSphere(gizmoCenter, 0.08f);
     }
 }
