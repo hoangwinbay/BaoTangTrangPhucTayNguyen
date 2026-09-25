@@ -70,21 +70,102 @@ public class CubeExhibitionTrigger : MonoBehaviour
     }
 
     /// <summary>
-    /// Nạp Sprite ngón tay nếu chưa được gán trong Inspector.
-    /// Dùng Resources.Load để hoạt động đúng cả trong Editor lẫn APK Android.
+    /// Nạp Sprite ngón tay. Nếu mọi cách load đều thất bại, tự vẽ sprite
+    /// bằng code để đảm bảo icon luôn hiển thị trên mọi nền tảng.
     /// </summary>
     public void EnsureFingerSprite()
     {
         if (fingerSprite != null) return;
 
-        // Ưu tiên Resources.Load (hoạt động trên cả Editor và Android APK)
+        // Cách 1: Resources.Load — hoạt động trên cả Editor và Android APK
         fingerSprite = Resources.Load<Sprite>("FingerTapIcon");
-        if (fingerSprite != null) return;
+        if (fingerSprite != null)
+        {
+            Debug.Log("[CubeExhibitionTrigger] Loaded FingerTapIcon from Resources.");
+            return;
+        }
 
 #if UNITY_EDITOR
-        // Dự phòng trong Editor: load từ đường dẫn Assets/UI/
+        // Cách 2: AssetDatabase — chỉ trong Editor
         fingerSprite = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/UI/FingerTapIcon.png");
+        if (fingerSprite != null)
+        {
+            Debug.Log("[CubeExhibitionTrigger] Loaded FingerTapIcon from AssetDatabase.");
+            return;
+        }
 #endif
+
+        // Cách 3: Tự vẽ icon ngón tay chỉ trỏ (mũi tên trắng dạng cursor) bằng code
+        Debug.LogWarning("[CubeExhibitionTrigger] FingerTapIcon not found in Resources or AssetDatabase — generating fallback sprite.");
+        fingerSprite = GenerateFallbackFingerSprite();
+    }
+
+    /// <summary>
+    /// Tạo sprite ngón tay trỏ đơn giản bằng code (hình mũi tên trắng trên nền trong suốt).
+    /// Đảm bảo icon luôn hiển thị kể cả khi file ảnh bị thiếu.
+    /// </summary>
+    private static Sprite GenerateFallbackFingerSprite()
+    {
+        int size = 64;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        Color clear = Color.clear;
+        Color white = Color.white;
+        Color outline = new Color(0f, 0f, 0f, 0.7f);
+
+        // Xóa nền trong suốt
+        Color[] pixels = new Color[size * size];
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = clear;
+
+        // Vẽ hình tròn nền trắng mờ (glow)
+        Vector2 center = new Vector2(size * 0.5f, size * 0.35f);
+        float radius = size * 0.30f;
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float dist = Vector2.Distance(new Vector2(x, y), center);
+                if (dist < radius)
+                {
+                    float alpha = Mathf.Clamp01(1f - dist / radius);
+                    pixels[y * size + x] = new Color(1f, 1f, 1f, alpha * 0.9f);
+                }
+            }
+        }
+
+        // Vẽ thân ngón tay (hình chữ nhật dọc)
+        int fingerW = Mathf.RoundToInt(size * 0.18f);
+        int fingerH = Mathf.RoundToInt(size * 0.42f);
+        int fingerX = Mathf.RoundToInt(center.x) - fingerW / 2;
+        int fingerY = Mathf.RoundToInt(center.y) - fingerH / 2;
+        for (int y = fingerY; y < fingerY + fingerH && y < size; y++)
+        {
+            for (int x = fingerX; x < fingerX + fingerW && x < size; x++)
+            {
+                if (x >= 0 && y >= 0)
+                    pixels[y * size + x] = white;
+            }
+        }
+
+        // Đầu ngón tay (hình bán cầu tròn)
+        Vector2 tipCenter = new Vector2(center.x, fingerY + fingerH - 1);
+        float tipR = fingerW * 0.55f;
+        for (int y = (int)(tipCenter.y - tipR); y <= (int)(tipCenter.y + tipR); y++)
+        {
+            for (int x = (int)(tipCenter.x - tipR); x <= (int)(tipCenter.x + tipR); x++)
+            {
+                if (x >= 0 && y >= 0 && x < size && y < size)
+                {
+                    if (Vector2.Distance(new Vector2(x, y), tipCenter) <= tipR)
+                        pixels[y * size + x] = white;
+                }
+            }
+        }
+
+        tex.SetPixels(pixels);
+        tex.Apply();
+        tex.filterMode = FilterMode.Bilinear;
+
+        return Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
     }
 
     private static Transform globalPromptHolder;
@@ -194,25 +275,46 @@ public class CubeExhibitionTrigger : MonoBehaviour
 
     private void CachePlayerCamera()
     {
+        // Cách 1: Camera.main (tag "MainCamera")
         if (Camera.main != null)
         {
             playerCam = Camera.main.transform;
+            Debug.Log($"[CubeExhibitionTrigger] Camera found via Camera.main: {playerCam.name}");
             return;
         }
 
-        // Tìm Camera từ XR Origin nếu đang ở môi trường VR
-        var xrCamera = GameObject.Find("Main Camera");
-        if (xrCamera != null)
+        // Cách 2: Tìm theo tên thường gặp của XR/VR camera
+        string[] camNames = new[] { "Main Camera", "XR Camera", "CenterEyeAnchor", "Camera", "Head" };
+        foreach (string camName in camNames)
         {
-            playerCam = xrCamera.transform;
-            return;
+            var go = GameObject.Find(camName);
+            if (go != null && go.GetComponent<Camera>() != null)
+            {
+                playerCam = go.transform;
+                Debug.Log($"[CubeExhibitionTrigger] Camera found by name '{camName}'");
+                return;
+            }
         }
 
+        // Cách 3: FPSController
         var fps = FindObjectOfType<FPSController>();
         if (fps != null)
         {
             playerCam = fps.playerCamera != null ? fps.playerCamera : fps.transform;
+            Debug.Log($"[CubeExhibitionTrigger] Camera found via FPSController: {playerCam.name}");
+            return;
         }
+
+        // Cách 4: Tìm bất kỳ Camera nào đang enabled trong scene
+        Camera[] allCams = FindObjectsOfType<Camera>();
+        if (allCams.Length > 0)
+        {
+            playerCam = allCams[0].transform;
+            Debug.LogWarning($"[CubeExhibitionTrigger] Fallback: using first camera found: {playerCam.name}");
+            return;
+        }
+
+        Debug.LogError("[CubeExhibitionTrigger] KHÔNG TÌM THẤY CAMERA nào trong scene! Icon ngón tay sẽ không hiển thị.");
     }
 
     /// <summary>
