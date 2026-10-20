@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Video;
 
 /// <summary>
@@ -81,8 +82,8 @@ public class TvVideoController : MonoBehaviour
     [Tooltip("Tốc độ chuyển độ sáng mượt mà")]
     public float intensityLerpSpeed = 5.0f;
 
-    [Tooltip("Tần suất lấy mẫu màu video (giây) - 0.06s tương đương ~16 lần/giây, tối ưu hiệu năng VR")]
-    public float sampleInterval = 0.06f;
+    [Tooltip("Tần suất lấy mẫu màu video (giây) - 0.1s tương đương ~10 lần/giây, tối ưu hiệu năng VR")]
+    public float sampleInterval = 0.1f;
 
     // Biến nội bộ phục vụ lấy mẫu màu hiệu năng cao (1x1 downsampling)
     private RenderTexture tinySampleRT;
@@ -90,6 +91,7 @@ public class TvVideoController : MonoBehaviour
     private float nextSampleTime = 0f;
     private Color targetLightColor;
     private float targetIntensity;
+    private bool isReadbackPending = false;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void AutoEnsureOnSceneLoad()
@@ -335,6 +337,7 @@ public class TvVideoController : MonoBehaviour
 
     private void CleanupAmbilightSampler()
     {
+        isReadbackPending = false;
         if (tinySampleRT != null)
         {
             if (tinySampleRT.IsCreated()) tinySampleRT.Release();
@@ -350,17 +353,31 @@ public class TvVideoController : MonoBehaviour
     }
 
     /// <summary>
-    /// Lấy mẫu màu trung bình và độ sáng của video qua GPU hardware downsampling 1x1
+    /// Lấy mẫu màu trung bình và độ sáng của video qua GPU hardware downsampling 1x1 bất đồng bộ (Zero CPU Stall)
     /// </summary>
     private void UpdateAmbilightSampling()
     {
+        if (isReadbackPending) return;
+
+        // Tối ưu khoảng cách: Nếu người chơi ở quá xa (> 25m), giảm tần suất lấy mẫu
+        Transform camTr = Camera.main != null ? Camera.main.transform : null;
+        if (camTr != null)
+        {
+            float distSq = (camTr.position - transform.position).sqrMagnitude;
+            if (distSq > 625f) // > 25m
+            {
+                if (Time.time < nextSampleTime) return;
+                nextSampleTime = Time.time + 1.0f; // Ở xa chỉ lấy mẫu 1 lần/giây
+            }
+        }
+
         if (Time.time < nextSampleTime) return;
         nextSampleTime = Time.time + sampleInterval;
 
         RenderTexture currentVideoRT = GetActiveVideoRenderTexture();
         if (currentVideoRT == null || !currentVideoRT.IsCreated()) return;
 
-        if (tinySampleRT == null || samplePixelTex == null)
+        if (tinySampleRT == null)
         {
             InitAmbilightSampler();
             if (tinySampleRT == null) return;
@@ -368,39 +385,63 @@ public class TvVideoController : MonoBehaviour
 
         try
         {
-            RenderTexture prevActive = RenderTexture.active;
-
             // Downsample toàn bộ khung hình video về đúng 1 pixel (GPU bilinear filter tự động tính trung bình màu)
             Graphics.Blit(currentVideoRT, tinySampleRT);
 
-            // Đọc 1 pixel duy nhất (4 bytes) - thao tác tốn < 0.03ms
-            RenderTexture.active = tinySampleRT;
-            samplePixelTex.ReadPixels(new Rect(0, 0, 1, 1), 0, 0);
-            samplePixelTex.Apply();
+            if (SystemInfo.supportsAsyncGPUReadback)
+            {
+                isReadbackPending = true;
+                AsyncGPUReadback.Request(tinySampleRT, 0, (AsyncGPUReadbackRequest req) =>
+                {
+                    isReadbackPending = false;
+                    if (this == null || !enabled || tinySampleRT == null) return;
+                    if (req.hasError) return;
 
-            RenderTexture.active = prevActive;
+                    var data = req.GetData<Color32>();
+                    if (data.Length > 0)
+                    {
+                        Color32 c = data[0];
+                        Color rawColor = new Color(c.r / 255f, c.g / 255f, c.b / 255f, c.a / 255f);
+                        ProcessSampledColor(rawColor);
+                    }
+                });
+            }
+            else
+            {
+                // Fallback dự phòng nếu thiết bị cũ không hỗ trợ AsyncGPUReadback
+                if (samplePixelTex == null) samplePixelTex = new Texture2D(1, 1, TextureFormat.RGBA32, false);
+                RenderTexture prevActive = RenderTexture.active;
+                RenderTexture.active = tinySampleRT;
+                samplePixelTex.ReadPixels(new Rect(0, 0, 1, 1), 0, 0);
+                samplePixelTex.Apply();
+                RenderTexture.active = prevActive;
 
-            Color rawColor = samplePixelTex.GetPixel(0, 0);
-
-            // Tính độ sáng (Luminance) của khung hình video
-            float luminance = 0.299f * rawColor.r + 0.587f * rawColor.g + 0.114f * rawColor.b;
-
-            // Tăng cường nhẹ độ bão hòa để ánh sáng hắt vào phòng có sắc thái ấm cúng, sống động
-            Color.RGBToHSV(rawColor, out float h, out float s, out float v);
-            s = Mathf.Clamp01(s * saturationBoost);
-            v = Mathf.Max(v, 0.2f); // Đảm bảo không bị tối hoàn toàn
-            Color vibrantColor = Color.HSVToRGB(h, s, v);
-
-            // Hòa trộn nhẹ với màu trắng sáng tự nhiên để tạo cảm giác ánh sáng đèn phòng dịu mắt
-            targetLightColor = Color.Lerp(vibrantColor, Color.white, 0.25f);
-
-            // Điều tiết cường độ đèn theo độ sáng cảnh phim
-            targetIntensity = Mathf.Lerp(minIntensity, maxIntensity, Mathf.Clamp01(luminance * 1.3f));
+                Color rawColor = samplePixelTex.GetPixel(0, 0);
+                ProcessSampledColor(rawColor);
+            }
         }
         catch
         {
-            // Đảm bảo không bị gián đoạn nếu khung hình video đang trong trạng thái chuyển tiếp
+            isReadbackPending = false;
         }
+    }
+
+    private void ProcessSampledColor(Color rawColor)
+    {
+        // Tính độ sáng (Luminance) của khung hình video
+        float luminance = 0.299f * rawColor.r + 0.587f * rawColor.g + 0.114f * rawColor.b;
+
+        // Tăng cường nhẹ độ bão hòa để ánh sáng hắt vào phòng có sắc thái ấm cúng, sống động
+        Color.RGBToHSV(rawColor, out float h, out float s, out float v);
+        s = Mathf.Clamp01(s * saturationBoost);
+        v = Mathf.Max(v, 0.2f); // Đảm bảo không bị tối hoàn toàn
+        Color vibrantColor = Color.HSVToRGB(h, s, v);
+
+        // Hòa trộn nhẹ với màu trắng sáng tự nhiên để tạo cảm giác ánh sáng đèn phòng dịu mắt
+        targetLightColor = Color.Lerp(vibrantColor, Color.white, 0.25f);
+
+        // Điều tiết cường độ đèn theo độ sáng cảnh phim
+        targetIntensity = Mathf.Lerp(minIntensity, maxIntensity, Mathf.Clamp01(luminance * 1.3f));
     }
 
     private RenderTexture GetActiveVideoRenderTexture()

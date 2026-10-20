@@ -87,7 +87,8 @@ public static class NpcSetupEditor
         SetupAllNpcs(showDialog: false);
     }
 
-    [MenuItem("Bảo Tàng/Cập Nhật và Tạo 10 NPC Tham Quan (Fix Di Chuyển)", false, 5)]
+    [MenuItem("Bao Tang VR/Cap Nhat 10 NPC Tham Quan (Fix Animation)", false, 5)]
+    [MenuItem("Tools/Bao Tang/NPC/Setup 10 NPC + Fix Animation", false, 10)]
     public static void MenuSetupNpcs()
     {
         SetupAllNpcs(showDialog: true);
@@ -99,6 +100,7 @@ public static class NpcSetupEditor
         if (!activeScene.isLoaded) return;
 
         Debug.Log("[NPC Setup] Bắt đầu kiểm tra và cấu hình hệ thống NPC...");
+        NpcAnimationSetup.Run(showDialog: false);
         StringBuilder sb = new StringBuilder();
         sb.AppendLine("=================================================");
         sb.AppendLine("     BÁO CÁO THIẾT LẬP HỆ THỐNG 10 NPC BẢO TÀNG  ");
@@ -172,10 +174,11 @@ public static class NpcSetupEditor
         Debug.Log($"[NPC Setup] Hoàn tất: Tổng {allNpcs.Length} NPC trong scene (Mới tạo: {createdCount}).");
 
         // 4. Lưu Scene
-        if (!EditorApplication.isPlaying && (createdCount > 0 || !activeScene.isDirty))
+        if (!EditorApplication.isPlaying)
         {
             EditorSceneManager.MarkSceneDirty(activeScene);
             EditorSceneManager.SaveScene(activeScene);
+            AssetDatabase.SaveAssets();
             sb.AppendLine("Trạng thái Scene: Đã lưu tự động thành công.");
         }
 
@@ -231,22 +234,53 @@ public static class NpcSetupEditor
         thamQuan.minThoiGianXem = 4.0f;
         thamQuan.maxThoiGianXem = 8.0f;
 
-        // 3. NpcWalkMotion
-        var walkMotion = npc.GetComponent<NpcWalkMotion>();
-        if (walkMotion == null) walkMotion = Undo.AddComponent<NpcWalkMotion>(npc);
-        walkMotion.agent = agent;
+        // Dọn dẹp script bị thiếu (missing script) nếu có
+        GameObjectUtility.RemoveMonoBehavioursWithMissingScript(npc);
 
-        // 4. NpcLimbMotion
-        var limbMotion = npc.GetComponent<NpcLimbMotion>();
-        if (limbMotion == null) limbMotion = Undo.AddComponent<NpcLimbMotion>(npc);
-        limbMotion.agent = agent;
-        limbMotion.walkMotion = walkMotion;
+        // 3. NpcAnimController (thay thế NpcWalkMotion + NpcLimbMotion cũ)
+        var animCtrl = npc.GetComponent<NpcAnimController>();
+        if (animCtrl == null) animCtrl = Undo.AddComponent<NpcAnimController>(npc);
+        animCtrl.idleStateName = "Idle";
+        animCtrl.walkStateName = "Walk";
+        animCtrl.useParameter = true;
+        animCtrl.parameterName = "Speed";
+        animCtrl.isBoolParameter = false;
+        animCtrl.Init();
 
-        // 5. Tắt tất cả Animator để nhường quyền điều khiển cử động cho NpcLimbMotion và tránh lỗi T-pose
+        // 4. Animator: gán NPC_AnimatorController + Avatar để animation đi/đứng hoạt động
+        const string CTRL_PATH = "Assets/Animation/NPC_AnimatorController.controller";
+        var runtimeCtrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(CTRL_PATH);
+
+        // Tìm Avatar từ mesh FBX của character
+        Avatar avatar = null;
+        string[] avatarSearchPaths = {
+            "Assets/npc_casual_set_00/Mesh/npc_csl_00_character_01m.fbx",
+            "Assets/npc_casual_set_00/Mesh/npc_csl_00_character_01f.fbx",
+            "Assets/npc_casual_set_00/Mesh/npc_csl_00_character_02m.fbx",
+            "Assets/npc_casual_set_00/Mesh/npc_csl_00_character_02f.fbx",
+        };
+        foreach (var avatarPath in avatarSearchPaths)
+        {
+            foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(avatarPath))
+            {
+                if (asset is Avatar av) { avatar = av; break; }
+            }
+            if (avatar != null) break;
+        }
+
         var animators = npc.GetComponentsInChildren<Animator>(true);
         foreach (var anim in animators)
         {
-            if (anim != null) anim.enabled = false;
+            if (anim == null) continue;
+            anim.enabled = true;
+            anim.applyRootMotion = false;
+            anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            // Luôn gán Controller
+            if (runtimeCtrl != null)
+                anim.runtimeAnimatorController = runtimeCtrl;
+            // Gán Avatar nếu chưa có (để animation Humanoid khớp đúng xương)
+            if (avatar != null && anim.avatar == null)
+                anim.avatar = avatar;
         }
 
         EditorUtility.SetDirty(npc);

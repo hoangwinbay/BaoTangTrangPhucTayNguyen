@@ -61,6 +61,7 @@ public class CubeExhibitionTrigger : MonoBehaviour
 
     private AudioSource narrationAudioSource;
     private bool isNarrationPlaying = false;
+    public bool IsNarrationPlaying => isNarrationPlaying;
 
     private Vector3 baseTopCenter;
     private float currentAlpha = 0f;

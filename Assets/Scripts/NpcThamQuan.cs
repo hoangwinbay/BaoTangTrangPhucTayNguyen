@@ -26,6 +26,12 @@ public class NpcThamQuan : MonoBehaviour
     [Tooltip("Khoảng cách dừng trước hiện vật")]
     public float khoangCachDung = 0.35f;
 
+    [Header("Fix Lún Đất (NavMeshAgent Base Offset)")]
+    [Tooltip("Chỉnh giá trị này để sửa NPC bị lún đất. " +
+             "Giá trị dương = nâng NPC lên. Giá trị âm = hạ xuống. " +
+             "Để -1 để tự động tính từ CapsuleCollider.")]
+    public float baseOffsetOverride = -1f;
+
     [Header("Cài đặt Quan sát")]
     [Tooltip("Thời gian dừng xem tối thiểu (giây)")]
     public float minThoiGianXem = 4.0f;
@@ -37,6 +43,7 @@ public class NpcThamQuan : MonoBehaviour
     [SerializeField] private string diemDangDen = "";
     [SerializeField] private bool dangXem = false;
     [SerializeField] private float demNguocXem = 0f;
+    [SerializeField] private float _appliedBaseOffset = 0f;
 
     public struct Stop
     {
@@ -54,6 +61,7 @@ public class NpcThamQuan : MonoBehaviour
     private float stuckTimer = 0f;
     private Vector3 lastPosition;
 
+
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
@@ -65,10 +73,42 @@ public class NpcThamQuan : MonoBehaviour
             agent.stoppingDistance = khoangCachDung;
             agent.autoBraking = true;
             agent.avoidancePriority = Random.Range(20, 80); // Tránh va chạm mượt mà giữa các NPC
+
+            // Fix lún đất: xác định baseOffset đúng
+            if (baseOffsetOverride >= 0f)
+            {
+                // Dùng giá trị user chỉnh tay trong Inspector
+                agent.baseOffset = baseOffsetOverride;
+                _appliedBaseOffset = baseOffsetOverride;
+                Debug.Log($"[NPC] {name}: baseOffset = {baseOffsetOverride} (manual)");
+            }
+            else
+            {
+                // Auto-detect từ CapsuleCollider
+                var cap = GetComponentInChildren<CapsuleCollider>();
+                if (cap != null)
+                {
+                    // Nếu pivot ở chân: center.y ≈ height/2 → baseOffset ≈ 0
+                    // Nếu pivot ở giữa: center.y ≈ 0 → baseOffset ≈ height/2
+                    float autoOffset = Mathf.Max(0f, cap.height / 2f - cap.center.y);
+                    agent.baseOffset = autoOffset;
+                    _appliedBaseOffset = autoOffset;
+                    Debug.Log($"[NPC] {name}: baseOffset = {autoOffset} (auto từ CapsuleCollider h={cap.height} c.y={cap.center.y})");
+                }
+                else
+                {
+                    _appliedBaseOffset = agent.baseOffset;
+                    Debug.Log($"[NPC] {name}: baseOffset = {agent.baseOffset} (giữ nguyên, không có CapsuleCollider)");
+                }
+            }
+
+            agent.updatePosition = true;
+            agent.updateUpAxis   = true;
         }
 
         // Đảm bảo NPC đứng chuẩn trên NavMesh
         SnapToNavMesh();
+
 
         // Xây dựng danh sách điểm dừng nếu chưa có
         if (sharedStops == null || sharedStops.Length == 0)

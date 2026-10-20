@@ -57,3 +57,14 @@ temp_images/
 temp_cubes_preview.png
 ImageBackups/
 GeneratedAssets/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Backup files
+*.bak
+*.bak.meta
+
+
