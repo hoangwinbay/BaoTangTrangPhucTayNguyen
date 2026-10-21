@@ -1,5 +1,5 @@
 ﻿=== BÁO CÁO THIẾT LẬP ANIMATION NPC BẢO TÀNG ===
-Thời gian: 2026-10-20 23:35:54
+Thời gian: 2026-10-21 09:34:01
 [FBX] Đã tạo clip 'Walking' từ take 'mixamo.com' (frames 0 đến 31): Assets/Animation/Walking.fbx
 [FBX] Đã tạo clip 'Standing Idle' từ take 'mixamo.com' (frames 0 đến 180): Assets/Animation/Standing Idle.fbx
 Walk Clip: Walking (humanoid=True, loop=True, length=1.03s)
@@ -10,14 +10,14 @@ Idle Clip: Standing Idle (humanoid=True, loop=True, length=6.00s)
 Active Scene: 'SampleScene' (isLoaded=True)
 Tìm thấy 10 NavMeshAgent trong scene:
   + Đã cấu hình: 'NPC_9' (Animator on 'NPC_9', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
-  + Đã cấu hình: 'NPC_7' (Animator on 'NPC_7', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
   + Đã cấu hình: 'NPC_2' (Animator on 'NPC_2', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
-  + Đã cấu hình: 'NPC_4' (Animator on 'NPC_4', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
-  + Đã cấu hình: 'NPC_8' (Animator on 'NPC_8', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
-  + Đã cấu hình: 'NPC_5' (Animator on 'NPC_5', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
-  + Đã cấu hình: 'NPC_10' (Animator on 'NPC_10', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
+  + Đã cấu hình: 'NPC_7' (Animator on 'NPC_7', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
   + Đã cấu hình: 'NPC_6' (Animator on 'NPC_6', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
   + Đã cấu hình: 'NPC_1' (Animator on 'NPC_1', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
+  + Đã cấu hình: 'NPC_8' (Animator on 'NPC_8', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
+  + Đã cấu hình: 'NPC_5' (Animator on 'NPC_5', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
   + Đã cấu hình: 'NPC_3' (Animator on 'NPC_3', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
+  + Đã cấu hình: 'NPC_10' (Animator on 'NPC_10', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
+  + Đã cấu hình: 'NPC_4' (Animator on 'NPC_4', Avatar='npc_hmn_01mAvatar', Controller='NPC_AnimatorController')
 
 Đã lưu Scene thành công.

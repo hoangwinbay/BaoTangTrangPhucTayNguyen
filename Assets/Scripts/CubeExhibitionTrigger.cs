@@ -147,21 +147,57 @@ public class CubeExhibitionTrigger : MonoBehaviour
     }
 
     /// <summary>
-    /// Tự động nạp file thuyết minh âm thanh cho Cube (72).
+    /// Tự động nạp file thuyết minh âm thanh tương ứng với từng dân tộc.
     /// </summary>
     public void EnsureVoiceNarration()
     {
         if (voiceNarration != null) return;
 
-        if (gameObject.name.Contains("72") || ethnicTitle.Contains("Giẻ Triêng") || ethnicTitle.Contains("Rơ Măm"))
-        {
-            voiceNarration = Resources.Load<AudioClip>("Audio/ThuyetMinh_Cube72");
-            if (voiceNarration != null) return;
-
 #if UNITY_EDITOR
-            voiceNarration = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/ThuyetMinh_Cube72.mp3");
-#endif
+        string path = GetDefaultAudioPath();
+        if (!string.IsNullOrEmpty(path))
+        {
+            voiceNarration = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+            if (voiceNarration != null) return;
         }
+
+        // Dự phòng mặc định
+        voiceNarration = UnityEditor.AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Audio/ThuyetMinh_Cube72.mp3");
+#else
+        voiceNarration = Resources.Load<AudioClip>("Audio/ThuyetMinh_Cube72");
+#endif
+    }
+
+    private string GetDefaultAudioPath()
+    {
+        string n = (ethnicTitle + " " + gameObject.name).ToLower();
+
+        if (n.Contains("ê đê") || n.Contains("e de") || n.Contains("56"))
+            return "Assets/Audio/trang_phuc_truyen_thong_cua_nguoi_e_de_noi_bat_05494c5f-4230-41f7-b4f6-0d4a28d81caf.mp3";
+        if (n.Contains("mạ") || n.Contains("ma") || n.Contains("58"))
+            return "Assets/Audio/Ma.wav";
+        if (n.Contains("xtiêng") || n.Contains("xtieng") || n.Contains("74"))
+            return "Assets/Audio/Xtieng.wav";
+        if (n.Contains("ba na") || n.Contains("bana") || n.Contains("76"))
+            return "Assets/Audio/Ba Na.wav";
+        if (n.Contains("chư-ru") || n.Contains("chu ru") || n.Contains("churu") || n.Contains("78"))
+            return "Assets/Audio/Chu Ru.wav";
+        if (n.Contains("m'nông") || n.Contains("m'nong") || n.Contains("mnong") || n.Contains("60"))
+            return "Assets/Audio/M'Nong.wav";
+        if (n.Contains("gia rai") || n.Contains("giarai") || n.Contains("64"))
+            return "Assets/Audio/Gia Rai.wav";
+        if (n.Contains("brâu") || n.Contains("brau") || n.Contains("66"))
+            return "Assets/Audio/Brau.wav";
+        if (n.Contains("cơ ho") || n.Contains("co ho") || n.Contains("coho") || n.Contains("68"))
+            return "Assets/Audio/Co Ho.wav";
+        if (n.Contains("xơ đăng") || n.Contains("xo dang") || n.Contains("xodang") || n.Contains("70"))
+            return "Assets/Audio/Xo Dang.wav";
+        if (n.Contains("giẻ triêng") || n.Contains("gie trieng") || n.Contains("gietrieng") || n.Contains("72"))
+            return "Assets/Audio/Gie Trieng.wav";
+        if (n.Contains("rơ măm") || n.Contains("ro mam") || n.Contains("romam") || n.Contains("62"))
+            return "Assets/Audio/ThuyetMinh_Cube72.mp3";
+
+        return null;
     }
 
     /// <summary>
