@@ -8,14 +8,6 @@ using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.SceneManagement;
 
-/// <summary>
-/// Tool Editor tự động thiết lập và quản lý hệ thống 10 NPC tham quan trong bảo tàng:
-/// 1. Khắc phục triệt để lỗi NPC không di chuyển khi Play.
-/// 2. Bổ sung 7 NPC mới (tổng cộng 10 NPC) với trang phục đa dạng (nam & nữ),
-///    đặt rải rác tại các khu vực khác nhau quanh bảo tàng.
-/// 3. Cấu hình NavMeshAgent, NpcThamQuan, NpcWalkMotion, NpcLimbMotion cho toàn bộ 10 NPC.
-/// 4. Tự động lưu Scene sau khi hoàn tất.
-/// </summary>
 public static class NpcSetupEditor
 {
     private struct NpcSpawnInfo
@@ -107,7 +99,6 @@ public static class NpcSetupEditor
         sb.AppendLine("=================================================");
         sb.AppendLine($"Thời gian: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
 
-        // 1. Cấu hình lại các NPC hiện có (NPC_1, NPC_2, NPC_3)
         List<GameObject> existingNpcs = new List<GameObject>();
         for (int i = 1; i <= 10; i++)
         {
@@ -120,7 +111,6 @@ public static class NpcSetupEditor
             }
         }
 
-        // 2. Tạo bổ sung các NPC còn thiếu (để đạt đủ 10 NPC)
         int createdCount = 0;
         foreach (var info in NewNpcConfig)
         {
@@ -131,7 +121,6 @@ public static class NpcSetupEditor
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(info.prefabPath);
                 if (prefab == null)
                 {
-                    // Fallback sang các prefab character khác nếu cần
                     string fallbackPath = "Assets/npc_casual_set_00/Prefabs/npc_csl_00_character_01m_01.prefab";
                     prefab = AssetDatabase.LoadAssetAtPath<GameObject>(fallbackPath);
                 }
@@ -144,7 +133,6 @@ public static class NpcSetupEditor
                         npcObj.name = npcName;
                         Undo.RegisterCreatedObjectUndo(npcObj, $"Create {npcName}");
 
-                        // Tìm vị trí gần nhất trên NavMesh
                         Vector3 spawnPos = info.position;
                         if (NavMesh.SamplePosition(info.position, out var hit, 3.5f, NavMesh.AllAreas))
                         {
@@ -153,7 +141,7 @@ public static class NpcSetupEditor
 
                         npcObj.transform.position = spawnPos;
                         npcObj.transform.rotation = Quaternion.Euler(0, Random.Range(0f, 360f), 0);
-                        npcObj.transform.localScale = Vector3.one * 0.887f; // Scale đồng bộ với các NPC trước
+                        npcObj.transform.localScale = Vector3.one * 0.887f;
 
                         ConfigureNpcComponents(npcObj, info.id);
                         createdCount++;
@@ -167,13 +155,11 @@ public static class NpcSetupEditor
             }
         }
 
-        // 3. Đếm lại tổng số NPC
         var allNpcs = Object.FindObjectsByType<NpcThamQuan>(FindObjectsInactive.Exclude);
         sb.AppendLine("-------------------------------------------------");
         sb.AppendLine($"Tổng số NPC hoạt động trong bảo tàng: {allNpcs.Length} (Mới tạo: {createdCount})");
         Debug.Log($"[NPC Setup] Hoàn tất: Tổng {allNpcs.Length} NPC trong scene (Mới tạo: {createdCount}).");
 
-        // 4. Lưu Scene
         if (!EditorApplication.isPlaying)
         {
             EditorSceneManager.MarkSceneDirty(activeScene);
@@ -182,10 +168,11 @@ public static class NpcSetupEditor
             sb.AppendLine("Trạng thái Scene: Đã lưu tự động thành công.");
         }
 
-        // 5. Ghi báo cáo ra file Assets/NpcSetupReport.txt
         try
         {
-            File.WriteAllText("Assets/NpcSetupReport.txt", sb.ToString(), Encoding.UTF8);
+            string repDir = Path.GetFullPath(Path.Combine(Application.dataPath, "../Docs/Reports"));
+            if (!Directory.Exists(repDir)) Directory.CreateDirectory(repDir);
+            File.WriteAllText(Path.Combine(repDir, "NpcSetupReport.txt"), sb.ToString(), Encoding.UTF8);
         }
         catch { }
 
@@ -203,7 +190,6 @@ public static class NpcSetupEditor
 
     private static void ConfigureNpcComponents(GameObject npc, int id)
     {
-        // 1. NavMeshAgent
         var agent = npc.GetComponent<NavMeshAgent>();
         if (agent == null) agent = Undo.AddComponent<NavMeshAgent>(npc);
         agent.speed = 1.15f + Random.Range(-0.1f, 0.15f);
@@ -217,7 +203,6 @@ public static class NpcSetupEditor
         agent.avoidancePriority = Random.Range(20, 80);
         agent.autoBraking = true;
 
-        // Warp agent an toàn vào NavMesh
         if (!agent.isOnNavMesh)
         {
             if (NavMesh.SamplePosition(npc.transform.position, out var hit, 5.0f, NavMesh.AllAreas))
@@ -226,7 +211,6 @@ public static class NpcSetupEditor
             }
         }
 
-        // 2. NpcThamQuan
         var thamQuan = npc.GetComponent<NpcThamQuan>();
         if (thamQuan == null) thamQuan = Undo.AddComponent<NpcThamQuan>(npc);
         thamQuan.tocDo = agent.speed;
@@ -234,10 +218,8 @@ public static class NpcSetupEditor
         thamQuan.minThoiGianXem = 4.0f;
         thamQuan.maxThoiGianXem = 8.0f;
 
-        // Dọn dẹp script bị thiếu (missing script) nếu có
         GameObjectUtility.RemoveMonoBehavioursWithMissingScript(npc);
 
-        // 3. NpcAnimController (thay thế NpcWalkMotion + NpcLimbMotion cũ)
         var animCtrl = npc.GetComponent<NpcAnimController>();
         if (animCtrl == null) animCtrl = Undo.AddComponent<NpcAnimController>(npc);
         animCtrl.idleStateName = "Idle";
@@ -247,11 +229,9 @@ public static class NpcSetupEditor
         animCtrl.isBoolParameter = false;
         animCtrl.Init();
 
-        // 4. Animator: gán NPC_AnimatorController + Avatar để animation đi/đứng hoạt động
         const string CTRL_PATH = "Assets/Animation/NPC_AnimatorController.controller";
         var runtimeCtrl = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(CTRL_PATH);
 
-        // Tìm Avatar từ mesh FBX của character
         Avatar avatar = null;
         string[] avatarSearchPaths = {
             "Assets/npc_casual_set_00/Mesh/npc_csl_00_character_01m.fbx",
@@ -275,10 +255,8 @@ public static class NpcSetupEditor
             anim.enabled = true;
             anim.applyRootMotion = false;
             anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            // Luôn gán Controller
             if (runtimeCtrl != null)
                 anim.runtimeAnimatorController = runtimeCtrl;
-            // Gán Avatar nếu chưa có (để animation Humanoid khớp đúng xương)
             if (avatar != null && anim.avatar == null)
                 anim.avatar = avatar;
         }

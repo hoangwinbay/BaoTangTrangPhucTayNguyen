@@ -57,7 +57,6 @@ public static class InspectCube92
                     string matPath = AssetDatabase.GetAssetPath(mat);
                     sb.AppendLine($"Material [{i}]: {mat.name} (Shader: {mat.shader.name}, Path: {matPath})");
 
-                    // Liệt kê các Texture gán vào material
                     string[] texPropNames = mat.GetTexturePropertyNames();
                     foreach (var prop in texPropNames)
                     {
@@ -84,6 +83,8 @@ public static class InspectCube92
 
         string report = sb.ToString();
         Debug.Log(report);
-        File.WriteAllText("Assets/Cube92_Report.txt", report);
+        string repDir = Path.GetFullPath(Path.Combine(Application.dataPath, "../Docs/Reports"));
+        if (!Directory.Exists(repDir)) Directory.CreateDirectory(repDir);
+        File.WriteAllText(Path.Combine(repDir, "Cube92_Report.txt"), report);
     }
 }

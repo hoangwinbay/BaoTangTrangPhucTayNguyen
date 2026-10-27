@@ -4,19 +4,6 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-/// <summary>
-/// Menu Editor tự động tối ưu và làm nét toàn bộ ảnh trưng bày trong bảo tàng:
-/// 1. Khắc phục triệt để lỗi "khi đi ra xa thì hình ảnh trên cube bị mờ":
-///    - Tắt Mipmap (enableMipMap = false) hoặc gán Mipmap Bias = -1.5f để ảnh không bị downsample khi lùi xa.
-///    - Bật Lọc bất đẳng hướng tối đa 16x (Anisotropic Filtering Level = 16) chống mờ ở góc nhìn nghiêng.
-///    - Chuyển chế độ lọc sang Trilinear (mịn và sắc nét tối đa).
-///    - Mở rộng kích thước tối đa lên 4096 (giữ nguyên độ phân giải gốc 2816x2036 của ảnh infographics).
-///    - Tắt nén giảm chất lượng (Texture Compression = Uncompressed / HighQuality) để chữ và chi tiết sắc nét 100%.
-/// 2. Ép bật Anisotropic Filtering toàn cục trong QualitySettings (ForceEnable).
-/// 3. Hỗ trợ 2 chế độ:
-///    - Chế độ 1 (Khuyên dùng): Siêu nét chống mờ từ xa (Tắt Mipmaps) -> Đứng xa bao nhiêu cũng nét căng.
-///    - Chế độ 2: Nét mượt mà (Bật Mipmaps + Bias -1.5f + Aniso 16).
-/// </summary>
 public class EnhanceExhibitionTexturesWindow : EditorWindow
 {
     private static readonly string[] TargetFolders = new[]
@@ -48,7 +35,6 @@ public class EnhanceExhibitionTexturesWindow : EditorWindow
     {
         EditorApplication.delayCall += () =>
         {
-            // Kiểm tra nếu QualitySettings chưa bật ForceEnable
             if (QualitySettings.anisotropicFiltering != AnisotropicFiltering.ForceEnable)
             {
                 QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
@@ -73,7 +59,6 @@ public class EnhanceExhibitionTexturesWindow : EditorWindow
         EditorGUILayout.Space(15);
         GUILayout.Label("2. Chọn Chế Độ Tối Ưu Làm Nét:", EditorStyles.boldLabel);
 
-        // Chế độ 1: Khuyên dùng
         GUI.backgroundColor = new Color(0.3f, 0.85f, 0.4f);
         if (GUILayout.Button("★ CHẾ ĐỘ 1: SIÊU NÉT CHỐNG MỜ TỪ XA (TẮT MIPMAPS - KHUYÊN DÙNG)\nĐảm bảo đi ra xa bao nhiêu cũng giữ nguyên độ phân giải 100%, không bao giờ mờ", GUILayout.Height(55)))
         {
@@ -83,7 +68,6 @@ public class EnhanceExhibitionTexturesWindow : EditorWindow
 
         EditorGUILayout.Space(8);
 
-        // Chế độ 2
         GUI.backgroundColor = new Color(0.4f, 0.7f, 1f);
         if (GUILayout.Button("CHẾ ĐỘ 2: LÀM NÉT CÂN BẰNG (BẬT MIPMAPS + BIAS -1.5f + ANISO 16x)\nGiữ Mipmaps nhưng đẩy xa gấp 3 lần khoảng cách làm mờ + 16x Anisotropic", GUILayout.Height(45)))
         {
@@ -101,10 +85,8 @@ public class EnhanceExhibitionTexturesWindow : EditorWindow
 
     public static void ApplyEnhancement(bool disableMipmaps)
     {
-        // 1. Ép bật Anisotropic Filtering trong QualitySettings
         QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
 
-        // 2. Tìm tất cả ảnh trong các thư mục mục tiêu
         List<string> texturePaths = new List<string>();
         foreach (string folder in TargetFolders)
         {
@@ -177,15 +159,12 @@ public class EnhanceExhibitionTexturesWindow : EditorWindow
                     changed = true;
                 }
 
-                // Dùng CompressedHQ thay vì Uncompressed để tránh ngốn VRAM gây GPU timeout + D3D11 crash.
-                // Uncompressed với 4096px tốn ~67MB VRAM/ảnh; CompressedHQ giảm xuống ~11MB/ảnh mà vẫn sắc nét.
                 if (importer.textureCompression != TextureImporterCompression.CompressedHQ)
                 {
                     importer.textureCompression = TextureImporterCompression.CompressedHQ;
                     changed = true;
                 }
 
-                // Cấu hình Default platform - dùng CompressedHQ để tiết kiệm VRAM
                 TextureImporterPlatformSettings defaultSettings = importer.GetDefaultPlatformTextureSettings();
                 if (defaultSettings.maxTextureSize < 2048 || defaultSettings.textureCompression != TextureImporterCompression.CompressedHQ)
                 {
@@ -196,7 +175,6 @@ public class EnhanceExhibitionTexturesWindow : EditorWindow
                     changed = true;
                 }
 
-                // Cấu hình Standalone platform - dùng CompressedHQ để tiết kiệm VRAM
                 TextureImporterPlatformSettings pcSettings = importer.GetPlatformTextureSettings("Standalone");
                 if (pcSettings != null && pcSettings.overridden)
                 {
@@ -267,7 +245,6 @@ public class EnhanceExhibitionTexturesWindow : EditorWindow
 
             details.Add($"✓ {cubeName}: Mat='{mat.name}' | Tex='{texName}' ({res}) | Filter={filter}, Aniso={aniso}");
 
-            // Đảm bảo material không bị bóng lóa che khuất chữ
             if (mat.HasProperty("_Smoothness") && mat.GetFloat("_Smoothness") > 0.5f)
             {
                 mat.SetFloat("_Smoothness", 0.2f);

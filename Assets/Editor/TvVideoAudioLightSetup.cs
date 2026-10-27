@@ -4,11 +4,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Video;
 
-/// <summary>
-/// Menu Editor tự động thiết lập Âm Thanh 3D và Ánh Sáng Chiếu Sáng Phòng cho Tivi trong Bảo tàng.
-/// Tự động chạy khi mở Unity Editor hoặc khi người dùng chọn menu:
-/// "Bảo Tàng > Cấu Hình Video Tivi (Âm Thanh 3D & Ánh Sáng Phòng)"
-/// </summary>
 public static class TvVideoAudioLightSetup
 {
     private const string MenuPath = "Bảo Tàng/Cấu Hình Video Tivi (Âm Thanh 3D & Ánh Sáng Phòng)";
@@ -24,7 +19,6 @@ public static class TvVideoAudioLightSetup
                 TvVideoController controller = tvGo.GetComponent<TvVideoController>();
                 VideoPlayer vp = tvGo.GetComponent<VideoPlayer>();
 
-                // Nếu Tivi chưa có controller hoặc VideoPlayer chưa chuyển sang AudioSource thì tự động cấu hình
                 if (controller == null || (vp != null && vp.audioOutputMode != VideoAudioOutputMode.AudioSource))
                 {
                     SetupTv(showDialog: false);
@@ -61,21 +55,18 @@ public static class TvVideoAudioLightSetup
 
         Undo.RegisterCompleteObjectUndo(tvGo, "Setup TV Video Audio and Light");
 
-        // 1. Kiểm tra VideoPlayer
         VideoPlayer videoPlayer = tvGo.GetComponent<VideoPlayer>();
         if (videoPlayer == null)
         {
             videoPlayer = tvGo.GetComponentInChildren<VideoPlayer>();
         }
 
-        // 2. Thêm hoặc lấy AudioSource
         AudioSource audioSource = tvGo.GetComponent<AudioSource>();
         if (audioSource == null)
         {
             audioSource = Undo.AddComponent<AudioSource>(tvGo);
         }
 
-        // Cấu hình AudioSource 3D
         audioSource.spatialBlend = 1.0f;
         audioSource.minDistance = 2.5f;
         audioSource.maxDistance = 16.0f;
@@ -85,7 +76,6 @@ public static class TvVideoAudioLightSetup
         audioSource.playOnAwake = false;
         audioSource.loop = true;
 
-        // Custom curve: 0-2.5m = 100%, 5m = 75%, 8m = 45%, 12m = 18%, 16m = 0%
         audioSource.rolloffMode = AudioRolloffMode.Custom;
         AnimationCurve curve = new AnimationCurve(
             new Keyframe(0f, 1.0f),
@@ -97,7 +87,6 @@ public static class TvVideoAudioLightSetup
         );
         audioSource.SetCustomCurve(AudioSourceCurveType.CustomRolloff, curve);
 
-        // 3. Kết nối VideoPlayer với AudioSource
         if (videoPlayer != null)
         {
             Undo.RecordObject(videoPlayer, "Configure VideoPlayer Audio");
@@ -107,7 +96,6 @@ public static class TvVideoAudioLightSetup
             EditorUtility.SetDirty(videoPlayer);
         }
 
-        // 4. Tạo hoặc cấu hình nguồn sáng TvScreenLight
         Transform lightTr = tvGo.transform.Find("TvScreenLight");
         GameObject lightGo;
         if (lightTr == null)
@@ -133,12 +121,10 @@ public static class TvVideoAudioLightSetup
         screenLight.color = new Color(0.85f, 0.92f, 1.0f);
         screenLight.shadows = LightShadows.None;
 
-        // Tính vị trí đặt đèn phía trước màn hình
         Renderer rend = tvGo.GetComponentInChildren<Renderer>();
         Vector3 center = (rend != null) ? rend.bounds.center : tvGo.transform.position;
         lightGo.transform.position = center + tvGo.transform.forward * 0.45f + Vector3.up * 0.15f;
 
-        // 5. Thêm hoặc cập nhật TvVideoController
         TvVideoController controller = tvGo.GetComponent<TvVideoController>();
         if (controller == null)
         {
@@ -167,7 +153,6 @@ public static class TvVideoAudioLightSetup
         EditorUtility.SetDirty(lightGo);
         EditorUtility.SetDirty(tvGo);
 
-        // 6. Lưu thay đổi vào Scene
         Scene activeScene = SceneManager.GetActiveScene();
         if (activeScene.isLoaded)
         {
@@ -218,18 +203,16 @@ public static class TvVideoAudioLightSetup
 
         int modifiedCount = 0;
 
-        // Tìm tất cả Renderer con của tivi hoặc vật thể kính được đặt phía trước
         Renderer[] allRenderers = tvGo.GetComponentsInChildren<Renderer>(true);
         foreach (var rend in allRenderers)
         {
-            if (rend.gameObject == tvGo) continue; // Bỏ qua khung chính nếu là tivi tổng
+            if (rend.gameObject == tvGo) continue;
 
             string objName = rend.gameObject.name.ToLower();
-            bool isGlassCandidate = objName.Contains("glass") || objName.Contains("kinh") || 
+            bool isGlassCandidate = objName.Contains("glass") || objName.Contains("kinh") ||
                                     objName.Contains("door") || objName.Contains("partition") ||
                                     objName.Contains("screen") || objName.Contains("quad") || objName.Contains("plane");
 
-            // Kiểm tra xem renderer này có đang dùng material kính không
             if (isGlassCandidate || (rend.sharedMaterial != null && rend.sharedMaterial.name.ToLower().Contains("kinh")))
             {
                 Undo.RecordObject(rend, "Optimize TV Glass Material");
@@ -247,7 +230,6 @@ public static class TvVideoAudioLightSetup
             }
         }
 
-        // Tạo Reflection Probe cục bộ cho phòng Tivi nếu chưa có
         Transform probeTr = tvGo.transform.Find("TvRoom_ReflectionProbe");
         if (probeTr == null)
         {
@@ -257,14 +239,12 @@ public static class TvVideoAudioLightSetup
             probeGo.transform.localPosition = new Vector3(0, 1.2f, 2.5f);
 
             ReflectionProbe probe = probeGo.AddComponent<ReflectionProbe>();
-            probe.mode = UnityEngine.Rendering.ReflectionProbeMode.Realtime;
-            probe.refreshMode = UnityEngine.Rendering.ReflectionProbeRefreshMode.OnAwake;
-            probe.timeSlicingMode = UnityEngine.Rendering.ReflectionProbeTimeSlicingMode.IndividualFaces;
+            probe.mode = UnityEngine.Rendering.ReflectionProbeMode.Baked;
             probe.size = new Vector3(12f, 6f, 14f);
             probe.boxProjection = true;
             probe.intensity = 0.8f;
             probe.clearFlags = UnityEngine.Rendering.ReflectionProbeClearFlags.SolidColor;
-            probe.backgroundColor = new Color(0.04f, 0.04f, 0.05f); // Màu tối nội thất phòng
+            probe.backgroundColor = new Color(0.04f, 0.04f, 0.05f);
             EditorUtility.SetDirty(probeGo);
             Debug.Log("[Tối Ưu Kính TV] Đã tạo Reflection Probe nội thất phòng TV.");
         }
@@ -282,4 +262,3 @@ public static class TvVideoAudioLightSetup
         EditorUtility.DisplayDialog("Tối Ưu Kính Tivi Thành Công", msg, "Hoàn tất");
     }
 }
-

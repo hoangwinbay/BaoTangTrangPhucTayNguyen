@@ -1,0 +1,41 @@
+@startuml
+skinparam defaultFontName "Segoe UI"
+skinparam roundcorner 8
+skinparam participantPadding 20
+skinparam boxPadding 10
+skinparam responseMessageBelowArrow false
+
+skinparam participant {
+    BackgroundColor #EAE6FF
+    BorderColor #8C80C8
+    FontColor #000000
+}
+skinparam actor {
+    BackgroundColor #EAE6FF
+    BorderColor #8C80C8
+    FontColor #000000
+}
+skinparam arrow {
+    Color #333333
+    FontColor #000000
+}
+
+actor "Người tham quan" as User
+participant "Nhân vật" as Player
+participant "Hệ thống tương tác" as InteractionSystem
+participant "Bệ hiện vật" as Exhibit
+participant "Bảng thông tin" as UI
+
+User -> Player : Di chuyển đến bệ hiện vật
+Player -> InteractionSystem : Kiểm tra khoảng cách
+InteractionSystem -> Exhibit : Xác định hiện vật gần nhất
+Exhibit --> InteractionSystem : Hiển thị biểu tượng gợi ý
+InteractionSystem --> Player : Cho phép tương tác
+User -> Player : Nhấn nút tương tác
+Player -> InteractionSystem : Gửi yêu cầu xem thông tin
+InteractionSystem -> Exhibit : Lấy dữ liệu thuyết minh
+Exhibit --> InteractionSystem : Dữ liệu hình ảnh và nội dung
+InteractionSystem -> UI : Mở bảng thông tin
+UI --> User : Hiển thị hình ảnh và nội dung hiện vật
+
+@enduml

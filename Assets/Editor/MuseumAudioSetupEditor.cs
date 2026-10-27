@@ -2,15 +2,11 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
-/// <summary>
-/// Tiện ích Editor giúp thêm và thiết lập âm thanh nền nhanh cho bảo tàng.
-/// </summary>
 public static class MuseumAudioSetupEditor
 {
     [MenuItem("Tools/Bảo Tàng/Âm Thanh/Cài đặt Âm thanh nền (BGM)", false, 1)]
     public static void SetupMuseumBackgroundMusic()
     {
-        // 1. Tìm hoặc nạp AudioClip
         AudioClip bgmClip = AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Resources/Audio/NhacNen_TayNguyen.mp3");
         if (bgmClip == null)
         {
@@ -23,7 +19,6 @@ public static class MuseumAudioSetupEditor
             return;
         }
 
-        // 2. Tối ưu cấu hình AudioImporter sang Streaming
         string clipPath = AssetDatabase.GetAssetPath(bgmClip);
         AudioImporter importer = AssetImporter.GetAtPath(clipPath) as AudioImporter;
         if (importer != null)
@@ -55,7 +50,6 @@ public static class MuseumAudioSetupEditor
             }
         }
 
-        // 3. Tìm hoặc tạo GameObject [MuseumAudioManager] trong Scene
         MuseumAudioManager audioMgr = Object.FindObjectOfType<MuseumAudioManager>();
         if (audioMgr == null)
         {
@@ -64,7 +58,6 @@ public static class MuseumAudioSetupEditor
             Undo.RegisterCreatedObjectUndo(go, "Create MuseumAudioManager");
         }
 
-        // 4. Gán clip và cấu hình
         Undo.RecordObject(audioMgr, "Configure MuseumAudioManager");
         audioMgr.backgroundMusicClip = bgmClip;
         audioMgr.baseVolume = 0.22f;
@@ -74,26 +67,25 @@ public static class MuseumAudioSetupEditor
 
         AudioSource src = audioMgr.GetComponent<AudioSource>();
         if (src == null) src = audioMgr.gameObject.AddComponent<AudioSource>();
-        
+
         Undo.RecordObject(src, "Configure AudioSource");
         src.clip = bgmClip;
         src.loop = true;
         src.playOnAwake = true;
-        src.spatialBlend = 0f; // 2D Sound
+        src.spatialBlend = 0f;
         src.volume = 0.22f;
 
-        // 5. Đánh dấu scene đã sửa đổi để lưu
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         Selection.activeGameObject = audioMgr.gameObject;
 
-        EditorUtility.DisplayDialog("Thành Công", 
+        EditorUtility.DisplayDialog("Thành Công",
             $"Đã cài đặt âm thanh nền thành công!\n\n" +
             $"- Tên bài hát: {bgmClip.name}\n" +
             $"- Thời lượng: {bgmClip.length:F1}s\n" +
             $"- Chế độ phát: Lặp lại vô tận (Loop), Âm lượng: 22%\n" +
             $"- Tối ưu RAM: Bật Streaming (Gần như 0 MB RAM)\n" +
             $"- Phím M: Tắt / Bật tiếng nhanh\n" +
-            $"- Audio Ducking: Tự động hạ nhỏ khi nghe thuyết minh hiện vật.", 
+            $"- Audio Ducking: Tự động hạ nhỏ khi nghe thuyết minh hiện vật.",
             "Tuyệt vời");
 
         Debug.Log("[MuseumAudioSetup] Hoàn tất thiết lập âm thanh nền cho bảo tàng.");

@@ -28,7 +28,6 @@ namespace MuseumVR.Editor
                 var activeScene = EditorSceneManager.GetActiveScene();
                 if (!activeScene.isLoaded) return;
 
-                // Nếu trong scene chưa có XR Origin, tự động cấu hình ngay
                 if (Object.FindObjectOfType<XROrigin>() == null)
                 {
                     SetupVROriginInActiveScene(false);
@@ -46,7 +45,6 @@ namespace MuseumVR.Editor
         {
             EnsureResourcesPrefab();
 
-            // 1. Đảm bảo có XRInteractionManager
             XRInteractionManager interactionManager = Object.FindObjectOfType<XRInteractionManager>();
             if (interactionManager == null)
             {
@@ -56,7 +54,6 @@ namespace MuseumVR.Editor
                 Debug.Log("[VR Setup] Đã tạo mới XR Interaction Manager.");
             }
 
-            // 2. Tìm điểm xuất phát từ FPSController máy tính
             FPSController pcPlayer = Object.FindObjectOfType<FPSController>();
             Vector3 spawnPosition = Vector3.zero;
             Quaternion spawnRotation = Quaternion.identity;
@@ -76,7 +73,6 @@ namespace MuseumVR.Editor
                 }
             }
 
-            // 3. Tìm hoặc tạo XR Origin
             XROrigin xrOrigin = Object.FindObjectOfType<XROrigin>();
             GameObject vrRigInstance = null;
 
@@ -110,7 +106,6 @@ namespace MuseumVR.Editor
                 vrRigInstance = xrOrigin.gameObject;
             }
 
-            // 4. Cấu hình Di chuyển (Joystick TRÁI theo hướng quay đầu của kính)
             var moveProvider = vrRigInstance.GetComponentInChildren<ContinuousMoveProvider>();
             if (moveProvider != null)
             {
@@ -125,7 +120,6 @@ namespace MuseumVR.Editor
                 EditorUtility.SetDirty(moveProvider);
             }
 
-            // 5. Cấu hình Xoay góc nhìn: TẮT joystick phải, người chơi chỉ cần QUAY ĐẦU tự nhiên 100%
             var snapTurn = vrRigInstance.GetComponentInChildren<SnapTurnProvider>();
             if (snapTurn != null)
             {
@@ -147,7 +141,6 @@ namespace MuseumVR.Editor
                 EditorUtility.SetDirty(turnChild.gameObject);
             }
 
-            // 6. Gán InputActionManager với bộ asset input actions mặc định
             var inputActionMgr = vrRigInstance.GetComponent<InputActionManager>();
             if (inputActionMgr == null)
             {
@@ -168,10 +161,8 @@ namespace MuseumVR.Editor
                 EditorUtility.SetDirty(inputActionMgr);
             }
 
-            // 7. Gắn XRSimpleInteractable cho 12 bệ hiện vật
             MuseumVRRigManager.ConfigureExhibitionCubeInteractables();
 
-            // 8. Đảm bảo MuseumPopupManager và MuseumVRRigManager có mặt trong scene
             if (Object.FindObjectOfType<MuseumPopupManager>() == null)
             {
                 GameObject mgr = new GameObject("MuseumPopupManager");
@@ -186,14 +177,13 @@ namespace MuseumVR.Editor
                 Undo.RegisterCreatedObjectUndo(vrMgr, "Create MuseumVRRigManager");
             }
 
-            // Lưu scene hiện tại
             EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
             AssetDatabase.SaveAssets();
 
             Debug.Log("[VR Setup] Thiết lập XR Origin cho Meta Quest 2 hoàn tất thành công!");
             if (showDialog)
             {
-                EditorUtility.DisplayDialog("Thành công", 
+                EditorUtility.DisplayDialog("Thành công",
                     "Đã cấu hình thành công hệ thống XR Origin cho Meta Quest 2:\n\n" +
                     "✓ Cần Joystick TRÁI: Đi bộ trong bảo tàng theo hướng nhìn của đầu.\n" +
                     "✓ Nhìn quanh: Quay đầu tự nhiên 100% (6DoF Head Tracking), đã tắt xoay nhân tạo ở joystick phải.\n" +

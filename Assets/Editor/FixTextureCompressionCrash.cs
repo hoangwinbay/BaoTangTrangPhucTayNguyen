@@ -3,17 +3,6 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-/// <summary>
-/// Fix khẩn cấp: Reimport toàn bộ texture từ Uncompressed → CompressedHQ để tránh
-/// tiêu tốn VRAM khiến GPU timeout → D3D11 swapchain crash khi mở Unity Editor.
-///
-/// Nguyên nhân crash:
-///   - Texture Uncompressed + 4096px tốn ~67MB VRAM mỗi ảnh
-///   - ~52+ ảnh trong dự án → >3.5GB VRAM bị chiếm ngay khi load
-///   - GPU AMD Radeon 7875MB VRAM bị quá tải → Windows TDR → D3D11 device removed
-///
-/// Script này chạy 1 lần duy nhất khi mở Editor, sau đó tự vô hiệu hoá.
-/// </summary>
 [InitializeOnLoad]
 public static class FixTextureCompressionCrash
 {
@@ -30,7 +19,6 @@ public static class FixTextureCompressionCrash
 
     static FixTextureCompressionCrash()
     {
-        // Chỉ chạy 1 lần, không lặp lại mỗi lần recompile
         if (SessionState.GetBool(AlreadyFixedKey, false)) return;
 
         EditorApplication.delayCall += () => RunFix();
@@ -64,7 +52,6 @@ public static class FixTextureCompressionCrash
                 TextureImporter importer = AssetImporter.GetAtPath(unityPath) as TextureImporter;
                 if (importer == null) continue;
 
-                // Chỉ fix những texture đang bị Uncompressed (gây ngốn VRAM)
                 bool isUncompressed = importer.textureCompression == TextureImporterCompression.Uncompressed;
 
                 TextureImporterPlatformSettings def = importer.GetDefaultPlatformTextureSettings();
@@ -102,14 +89,12 @@ public static class FixTextureCompressionCrash
 
                 bool changed = false;
 
-                // Fix compression chính
                 if (importer.textureCompression == TextureImporterCompression.Uncompressed)
                 {
                     importer.textureCompression = TextureImporterCompression.CompressedHQ;
                     changed = true;
                 }
 
-                // Fix Default platform settings
                 TextureImporterPlatformSettings defSettings = importer.GetDefaultPlatformTextureSettings();
                 if (defSettings.textureCompression == TextureImporterCompression.Uncompressed)
                 {
@@ -119,7 +104,6 @@ public static class FixTextureCompressionCrash
                     changed = true;
                 }
 
-                // Fix Standalone platform settings nếu bị override
                 TextureImporterPlatformSettings pcSettings = importer.GetPlatformTextureSettings("Standalone");
                 if (pcSettings != null && pcSettings.overridden && pcSettings.textureCompression == TextureImporterCompression.Uncompressed)
                 {

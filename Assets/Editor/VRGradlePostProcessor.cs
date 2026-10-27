@@ -4,11 +4,6 @@ using UnityEngine;
 
 namespace MuseumVR.Editor
 {
-    /// <summary>
-    /// Tự động cấu hình Gradle sau khi Unity xuất project Android:
-    /// 1. Vô hiệu hóa toàn bộ tác vụ Android Lint (nguyên nhân gây lỗi nén file tạm >4GB).
-    /// 2. Bật zip64 = true cho toàn bộ tác vụ Zip trong Gradle để hỗ trợ file tài nguyên lớn.
-    /// </summary>
     public class VRGradlePostProcessor : IPostGenerateGradleAndroidProject
     {
         public int callbackOrder => 999;

@@ -8,17 +8,6 @@ using UnityEngine.Rendering.Universal;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 
-/// <summary>
-/// Công cụ tối ưu hóa hiệu năng toàn diện cho dự án Bảo Tàng.
-/// Khắc phục triệt để hiện tượng giật lag khi di chuyển camera bao quát cả căn nhà:
-/// 1. Tắt đổ bóng thời gian thực trên các đèn phụ (Point/Spot/LED) để dứt điểm nghẽn 30 shadow passes.
-/// 2. Nâng cấp 78 Material từ "Standard" (Built-in lỗi thời làm vỡ batch URP) lên "Universal Render Pipeline/Lit".
-/// 3. Tắt CastShadows trên hàng trăm vật thể trần, đèn phụ, thông gió, kính vách để giải phóng bóng Directional Light.
-/// 4. Bật GPU Instancing trên toàn bộ Material trong Assets.
-/// 5. Gán Static Batching & Occlusion flags cho các cấu trúc tĩnh (tường, sàn, cột, bệ trưng bày).
-/// 6. Hỗ trợ 1-click Nướng Occlusion Culling (ẩn các phòng bị tường che khuất khi nhìn từ xa).
-/// TUYỆT ĐỐI KHÔNG XÓA BẤT KỲ MÔ HÌNH HOẶC ASSET NÀO TRONG DỰ ÁN.
-/// </summary>
 public static class MuseumPerformanceOptimizer
 {
     private const string MenuPrefix = "Bảo Tàng/";
@@ -30,7 +19,6 @@ public static class MuseumPerformanceOptimizer
         {
             RunDiagnostic(showDialog: false);
 
-            // Tự động kiểm tra nếu còn vật liệu Standard cũ chưa chuyển đổi
             int standardCount = CountStandardMaterials();
             if (standardCount > 0)
             {
@@ -64,9 +52,6 @@ public static class MuseumPerformanceOptimizer
         BakeOcclusion();
     }
 
-    /// <summary>
-    /// Thực thi toàn bộ các bước tối ưu hóa hiệu năng
-    /// </summary>
     public static void OptimizeAll(bool showDialog = true)
     {
         int lightsOptimized = 0;
@@ -75,7 +60,6 @@ public static class MuseumPerformanceOptimizer
         int shadowCastersOff = 0;
         int staticObjectsTagged = 0;
 
-        // --- 1. TỐI ƯU HÓA HỆ THỐNG ĐÈN (TẮT BÓNG ĐÈN PHỤ) ---
         Light[] lights = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var l in lights)
         {
@@ -100,7 +84,6 @@ public static class MuseumPerformanceOptimizer
             }
         }
 
-        // --- 2. NÂNG CẤP MATERIAL STANDARD SANG URP LIT & BẬT GPU INSTANCING ---
         materialsUpgraded = UpgradeAllMaterialsToURPLit();
 
         string[] matGuids = AssetDatabase.FindAssets("t:Material", new[] { "Assets" });
@@ -116,14 +99,11 @@ public static class MuseumPerformanceOptimizer
             }
         }
 
-        // --- 3. TẮT CAST SHADOWS TRÊN CÁC VẬT THỂ NỘI THẤT/TRẦN NHỎ ---
-        // (Đèn trần Light_09, ống gió Vent, kính vách không cần đổ bóng từ mặt trời bên ngoài)
         MeshRenderer[] renderers = UnityEngine.Object.FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var r in renderers)
         {
             string n = r.gameObject.name.ToLower();
-            // Chỉ tắt bóng cho đèn phụ, ống gió và kính trong suốt (không tắt bóng của khung cửa sổ trần và bệ trưng bày)
-            if (n.Contains("light_") || n.Contains("led_light") || n.Contains("vent") || 
+            if (n.Contains("light_") || n.Contains("led_light") || n.Contains("vent") ||
                 n.Contains("glass") || n.Contains("kinh"))
             {
                 if (r.shadowCastingMode != ShadowCastingMode.Off)
@@ -136,14 +116,11 @@ public static class MuseumPerformanceOptimizer
             }
         }
 
-        // --- 4. ĐÁNH DẤU STATIC BATCHING CHO CẤU TRÚC KIẾN TRÚC ---
         staticObjectsTagged = TagStaticArchitecture();
 
-        // --- 5. TỐI ƯU CẤU HÌNH URP ---
         OptimizeURPConfig("Assets/Settings/Project Configuration/Performance URP Config.asset", 2048, 8, 35f);
         OptimizeURPConfig("Assets/Settings/Project Configuration/Quality URP Config.asset", 2048, 8, 40f);
 
-        // --- 6. LƯU THAY ĐỔI & CHẨN ĐOÁN ---
         var activeScene = EditorSceneManager.GetActiveScene();
         if (activeScene.isLoaded)
         {
@@ -179,9 +156,6 @@ public static class MuseumPerformanceOptimizer
         }
     }
 
-    /// <summary>
-    /// Đếm số Material đang dùng shader Standard cũ
-    /// </summary>
     private static int CountStandardMaterials()
     {
         int count = 0;
@@ -199,9 +173,6 @@ public static class MuseumPerformanceOptimizer
         return count;
     }
 
-    /// <summary>
-    /// Nâng cấp toàn bộ Material Standard sang Universal Render Pipeline/Lit
-    /// </summary>
     private static int UpgradeAllMaterialsToURPLit()
     {
         Shader urpLit = Shader.Find("Universal Render Pipeline/Lit");
@@ -240,9 +211,6 @@ public static class MuseumPerformanceOptimizer
         return upgraded;
     }
 
-    /// <summary>
-    /// Đánh dấu cờ Static cho các thành phần kiến trúc cố định
-    /// </summary>
     private static int TagStaticArchitecture()
     {
         int staticObjectsTagged = 0;
@@ -278,9 +246,6 @@ public static class MuseumPerformanceOptimizer
         return staticObjectsTagged;
     }
 
-    /// <summary>
-    /// Nướng Occlusion Culling
-    /// </summary>
     private static void BakeOcclusion()
     {
         if (StaticOcclusionCulling.isRunning)
@@ -297,14 +262,11 @@ public static class MuseumPerformanceOptimizer
         StaticOcclusionCulling.Compute();
 
         Debug.Log("[Bảo Tàng] Đang tiến hành nướng Occlusion Culling...");
-        EditorUtility.DisplayDialog("Occlusion Culling", 
+        EditorUtility.DisplayDialog("Occlusion Culling",
             "Đang tiến hành nướng Occlusion Culling!\n\n" +
             "Khi hoàn tất, các gian phòng và đồ vật nằm phía sau bức tường sẽ tự động được ẩn đi khi nhìn từ ngoài vào, giúp tăng vọt FPS khi di chuyển camera.", "Đồng Ý");
     }
 
-    /// <summary>
-    /// Chỉnh sửa các thông số URP Asset thông qua SerializedObject an toàn
-    /// </summary>
     private static void OptimizeURPConfig(string assetPath, int mainShadowRes, int perObjectLightLimit, float shadowDistance)
     {
         UniversalRenderPipelineAsset urp = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(assetPath);
@@ -335,9 +297,6 @@ public static class MuseumPerformanceOptimizer
         EditorUtility.SetDirty(urp);
     }
 
-    /// <summary>
-    /// Khôi phục các thông số URP Asset về chất lượng cao đầy đủ bóng đổ và chiếu sáng
-    /// </summary>
     private static void RestoreURPConfig(string assetPath)
     {
         UniversalRenderPipelineAsset urp = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(assetPath);
@@ -353,19 +312,19 @@ public static class MuseumPerformanceOptimizer
         if (pMainLightShadows != null) pMainLightShadows.boolValue = true;
 
         SerializedProperty pAddLightsMode = so.FindProperty("m_AdditionalLightsRenderingMode");
-        if (pAddLightsMode != null) pAddLightsMode.intValue = 1; // PerPixel
+        if (pAddLightsMode != null) pAddLightsMode.intValue = 1;
 
         SerializedProperty pAddLightsLimit = so.FindProperty("m_AdditionalLightsPerObjectLimit");
-        if (pAddLightsLimit != null) pAddLightsLimit.intValue = 8; // Cho phép tối đa 8 đèn chiếu sáng đồng thời mỗi vật thể
+        if (pAddLightsLimit != null) pAddLightsLimit.intValue = 8;
 
         SerializedProperty pAddLightsShadows = so.FindProperty("m_AdditionalLightShadowsSupported");
-        if (pAddLightsShadows != null) pAddLightsShadows.boolValue = true; // Bắt buộc: bật lại đổ bóng đèn phụ trong URP
+        if (pAddLightsShadows != null) pAddLightsShadows.boolValue = true;
 
         SerializedProperty pAddLightsRes = so.FindProperty("m_AdditionalLightsShadowmapResolution");
         if (pAddLightsRes != null) pAddLightsRes.intValue = 2048;
 
         SerializedProperty pShadowDist = so.FindProperty("m_ShadowDistance");
-        if (pShadowDist != null) pShadowDist.floatValue = 50f; // Khôi phục tầm phủ bóng đổ rộng 50m
+        if (pShadowDist != null) pShadowDist.floatValue = 50f;
 
         SerializedProperty pDynamicBatch = so.FindProperty("m_SupportsDynamicBatching");
         if (pDynamicBatch != null) pDynamicBatch.boolValue = true;
@@ -391,17 +350,12 @@ public static class MuseumPerformanceOptimizer
         }
     }
 
-    /// <summary>
-    /// Khôi phục bật lại bóng đổ và kích hoạt toàn bộ đèn trong Scene
-    /// </summary>
     public static void RestoreAllLightShadows()
     {
-        // 1. KHÔI PHỤC CẤU HÌNH URP (BẬT LẠI SHADOW TRONG PIPELINE VÀ PER OBJECT LIMIT)
         RestoreURPConfig("Assets/Settings/Project Configuration/Performance URP Config.asset");
         RestoreURPConfig("Assets/Settings/Project Configuration/Quality URP Config.asset");
         RestoreActivePipelineURP();
 
-        // 2. KHÔI PHỤC TẤT CẢ CÁC ĐÈN TRONG SCENE (BẬT COMPONENT, BẬT GAMEOBJECT, BẬT SHADOW, RESTORE INTENSITY)
         Light[] lights = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         int restoredShadowCount = 0;
         int activatedLightCount = 0;
@@ -410,7 +364,6 @@ public static class MuseumPerformanceOptimizer
 
         foreach (var l in lights)
         {
-            // Kích hoạt GameObject nếu bị ẩn
             if (!l.gameObject.activeSelf)
             {
                 Undo.RecordObject(l.gameObject, "Activate Light GameObject");
@@ -419,7 +372,6 @@ public static class MuseumPerformanceOptimizer
                 activatedGoCount++;
             }
 
-            // Bật component Light nếu bị tắt
             if (!l.enabled)
             {
                 Undo.RecordObject(l, "Enable Light Component");
@@ -428,7 +380,6 @@ public static class MuseumPerformanceOptimizer
                 activatedLightCount++;
             }
 
-            // Khôi phục bóng đổ Soft Shadows
             if (l.shadows != LightShadows.Soft)
             {
                 Undo.RecordObject(l, "Restore Light Shadow");
@@ -437,7 +388,6 @@ public static class MuseumPerformanceOptimizer
                 restoredShadowCount++;
             }
 
-            // Khôi phục cường độ chiếu sáng nếu đèn bị 0 hoặc quá tối
             if (l.intensity <= 0.05f)
             {
                 Undo.RecordObject(l, "Restore Light Intensity");
@@ -449,7 +399,6 @@ public static class MuseumPerformanceOptimizer
             }
         }
 
-        // 3. KHÔI PHỤC ĐỔ BÓNG VẬT THỂ NỘI THẤT/TRẦN NHỎ
         int restoredPropsShadowCount = 0;
         MeshRenderer[] renderers = UnityEngine.Object.FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var r in renderers)
@@ -457,7 +406,7 @@ public static class MuseumPerformanceOptimizer
             if (r.shadowCastingMode == ShadowCastingMode.Off)
             {
                 string n = r.gameObject.name.ToLower();
-                if (n.Contains("light_") || n.Contains("led_light") || n.Contains("vent") || 
+                if (n.Contains("light_") || n.Contains("led_light") || n.Contains("vent") ||
                     n.Contains("glass") || n.Contains("kinh") || n.Contains("cube") || n.Contains("window"))
                 {
                     Undo.RecordObject(r, "Restore Props Cast Shadow");
@@ -468,7 +417,6 @@ public static class MuseumPerformanceOptimizer
             }
         }
 
-        // 4. LƯU THAY ĐỔI VÀ REFRESH EDITOR AN TOÀN
         if (!EditorApplication.isPlaying)
         {
             var activeScene = EditorSceneManager.GetActiveScene();
@@ -482,7 +430,6 @@ public static class MuseumPerformanceOptimizer
         AssetDatabase.Refresh();
         SceneView.RepaintAll();
 
-        // 5. CẬP NHẬT LẠI FILE BÁO CÁO CHẨN ĐOÁN
         RunDiagnostic(showDialog: false);
 
         string summary = $"[Bảo Tàng] Khôi phục toàn bộ hệ thống đèn & bóng đổ hoàn tất!\n" +
@@ -506,9 +453,6 @@ public static class MuseumPerformanceOptimizer
             "Đồng Ý");
     }
 
-    /// <summary>
-    /// Xuất thông tin chẩn đoán hiệu năng chi tiết vào file Assets/SceneDeepAnalysis.txt
-    /// </summary>
     public static void RunDiagnostic(bool showDialog = false)
     {
         try
@@ -521,7 +465,6 @@ public static class MuseumPerformanceOptimizer
             sb.AppendLine($"Thời gian: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             sb.AppendLine($"Scene: {scene.name} (Đường dẫn: {scene.path}, IsLoaded: {scene.isLoaded})");
 
-            // 1. REFLECTION PROBES
             ReflectionProbe[] probes = UnityEngine.Object.FindObjectsByType<ReflectionProbe>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             sb.AppendLine($"\n--- 1. REFLECTION PROBES ({probes.Length} probe) ---");
             foreach (var p in probes)
@@ -529,7 +472,6 @@ public static class MuseumPerformanceOptimizer
                 sb.AppendLine($"  • '{p.name}': Mode={p.mode}, RefreshMode={p.refreshMode}, TimeSlicing={p.timeSlicingMode}, Resolution={p.resolution}, BoxSize={p.size}");
             }
 
-            // 2. CAMERAS
             Camera[] cameras = UnityEngine.Object.FindObjectsByType<Camera>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             sb.AppendLine($"\n--- 2. CAMERAS ({cameras.Length} camera) ---");
             foreach (var c in cameras)
@@ -537,7 +479,6 @@ public static class MuseumPerformanceOptimizer
                 sb.AppendLine($"  • '{c.name}': FarClip={c.farClipPlane}, FOV={c.fieldOfView}, OcclusionCulling={c.useOcclusionCulling}, ClearFlags={c.clearFlags}");
             }
 
-            // 3. LIGHTS
             Light[] lights = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             sb.AppendLine($"\n--- 3. HỆ THỐNG ĐÈN ({lights.Length} đèn) ---");
             int dirCount = 0, pointCount = 0, spotCount = 0, shadowCount = 0;
@@ -552,7 +493,6 @@ public static class MuseumPerformanceOptimizer
             }
             sb.AppendLine($"  => Tổng Directional: {dirCount}, Point: {pointCount}, Spot: {spotCount}, Đang đổ bóng: {shadowCount}");
 
-            // 4. MESHES & TRIANGLE COUNTS
             MeshRenderer[] mrs = UnityEngine.Object.FindObjectsByType<MeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             SkinnedMeshRenderer[] smrs = UnityEngine.Object.FindObjectsByType<SkinnedMeshRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None);
             long totalTris = 0;
@@ -605,7 +545,6 @@ public static class MuseumPerformanceOptimizer
                 sb.AppendLine($"  {i + 1,2}. '{item.name}' (Mesh: '{item.meshName}', Parent: '{item.parent}'): {item.tris:N0} tris, {item.verts:N0} verts");
             }
 
-            // 6. SHADERS IN USE
             HashSet<Shader> shaders = new HashSet<Shader>();
             foreach (var r in mrs)
             {
@@ -620,8 +559,9 @@ public static class MuseumPerformanceOptimizer
                 sb.AppendLine($"  • {s.name}");
             }
 
-            // Write to file
-            string path = Path.Combine(Application.dataPath, "SceneDeepAnalysis.txt");
+            string repDir = Path.GetFullPath(Path.Combine(Application.dataPath, "../Docs/Reports"));
+            if (!Directory.Exists(repDir)) Directory.CreateDirectory(repDir);
+            string path = Path.Combine(repDir, "SceneDeepAnalysis.txt");
             File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
             Debug.Log($"[MuseumPerformanceOptimizer] Đã ghi phân tích chuyên sâu tại: {path}");
 
@@ -632,7 +572,7 @@ public static class MuseumPerformanceOptimizer
                     $"Tổng Đèn: {lights.Length} (Shadow Casters: {shadowCount})\n" +
                     $"Reflection Probes: {probes.Length}\n" +
                     $"MeshRenderers: {mrs.Length} (Static: {staticBatchCount})\n\n" +
-                    $"Chi tiết đã xuất ra file Assets/SceneDeepAnalysis.txt", "Đóng");
+                    $"Chi tiết đã xuất ra file Docs/Reports/SceneDeepAnalysis.txt", "Đóng");
             }
         }
         catch (Exception ex)

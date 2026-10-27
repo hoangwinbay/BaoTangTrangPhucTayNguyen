@@ -46,23 +46,19 @@ public static class NpcAnimationSetup
         report.AppendLine("=== BÁO CÁO THIẾT LẬP ANIMATION NPC BẢO TÀNG ===");
         report.AppendLine($"Thời gian: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
 
-        // 1. Cấu hình ModelImporter cho 2 file FBX từ take mixamo.com thực tế
         ConfigureFbxWithRealTake(WALK_FBX_PATH, "Walking", report);
         ConfigureFbxWithRealTake(IDLE_FBX_PATH, "Standing Idle", report);
 
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
-        // 2. Load Animation Clips thực tế
         AnimationClip walkClip = GetFirstClip(WALK_FBX_PATH);
         AnimationClip idleClip = GetFirstClip(IDLE_FBX_PATH);
 
         report.AppendLine($"Walk Clip: {(walkClip != null ? walkClip.name + $" (humanoid={walkClip.isHumanMotion}, loop={walkClip.isLooping}, length={walkClip.length:F2}s)" : "NULL!")}");
         report.AppendLine($"Idle Clip: {(idleClip != null ? idleClip.name + $" (humanoid={idleClip.isHumanMotion}, loop={idleClip.isLooping}, length={idleClip.length:F2}s)" : "NULL!")}");
 
-        // 3. Tạo / Cập nhật Controller
         var ctrl = SetupController(CTRL_PATH, idleClip, walkClip, report);
 
-        // Copy vào Resources để Runtime luôn sẵn sàng nạp
         try
         {
             if (!Directory.Exists("Assets/Resources")) Directory.CreateDirectory("Assets/Resources");
@@ -71,10 +67,8 @@ public static class NpcAnimationSetup
         }
         catch { }
 
-        // 4. Tìm Avatar tương thích
         Avatar avatar = FindBestAvatar(report);
 
-        // 5. Cấu hình toàn bộ NPC trong Scene
         int count = 0;
         var scene = SceneManager.GetActiveScene();
         report.AppendLine($"\nActive Scene: '{scene.name}' (isLoaded={scene.isLoaded})");
@@ -91,15 +85,12 @@ public static class NpcAnimationSetup
                 continue;
             }
 
-            // Gỡ bỏ script hỏng nếu có
             GameObjectUtility.RemoveMonoBehavioursWithMissingScript(go);
 
-            // Tìm Animator (ưu tiên trên root hoặc children có bones)
             var animators = go.GetComponentsInChildren<Animator>(true);
             Animator anim = null;
             if (animators.Length > 0)
             {
-                // Chọn animator có avatar hợp lệ hoặc animator đầu tiên
                 foreach (var a in animators)
                 {
                     if (a.avatar != null && a.avatar.isValid) { anim = a; break; }
@@ -125,7 +116,6 @@ public static class NpcAnimationSetup
                 anim.avatar = avatar;
             }
 
-            // Gán NpcAnimController trên root NPC
             var animCtrl = go.GetComponent<NpcAnimController>();
             if (animCtrl == null)
             {
@@ -139,7 +129,6 @@ public static class NpcAnimationSetup
             animCtrl.isBoolParameter = false;
             animCtrl.Init();
 
-            // Cấu hình NavMeshAgent
             agent.speed = Mathf.Clamp(agent.speed, 0.9f, 1.4f);
             agent.stoppingDistance = 0.35f;
 
@@ -150,7 +139,6 @@ public static class NpcAnimationSetup
             report.AppendLine($"  + Đã cấu hình: '{go.name}' (Animator on '{anim.gameObject.name}', Avatar='{(anim.avatar != null ? anim.avatar.name : "null")}', Controller='{(anim.runtimeAnimatorController != null ? anim.runtimeAnimatorController.name : "null")}')");
         }
 
-        // 6. Lưu Scene và Asset
         if (scene.isLoaded)
         {
             EditorSceneManager.MarkSceneDirty(scene);
@@ -159,8 +147,10 @@ public static class NpcAnimationSetup
         }
         AssetDatabase.SaveAssets();
 
-        File.WriteAllText("Assets/NpcAnimationExecutionReport.txt", report.ToString(), Encoding.UTF8);
-        Debug.Log($"[NpcAnimationSetup] Hoàn tất cấu hình animation cho {count} NPC. Chi tiết tại Assets/NpcAnimationExecutionReport.txt");
+        string repDir = Path.GetFullPath(Path.Combine(Application.dataPath, "../Docs/Reports"));
+        if (!Directory.Exists(repDir)) Directory.CreateDirectory(repDir);
+        File.WriteAllText(Path.Combine(repDir, "NpcAnimationExecutionReport.txt"), report.ToString(), Encoding.UTF8);
+        Debug.Log($"[NpcAnimationSetup] Hoàn tất cấu hình animation cho {count} NPC. Chi tiết tại Docs/Reports/NpcAnimationExecutionReport.txt");
 
         if (showDialog)
         {
@@ -237,7 +227,6 @@ public static class NpcAnimationSetup
         importer.animationType = ModelImporterAnimationType.Human;
         importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
 
-        // Reset clipAnimations để đọc trực tiếp take gốc từ FBX
         importer.clipAnimations = new ModelImporterClipAnimation[0];
         importer.SaveAndReimport();
 
@@ -294,13 +283,11 @@ public static class NpcAnimationSetup
 
         sm.defaultState = idleState;
 
-        // Transition: Idle -> Walk (Speed > 0.1)
         var t1 = idleState.AddTransition(walkState);
         t1.AddCondition(AnimatorConditionMode.Greater, 0.1f, "Speed");
         t1.duration = 0.2f;
         t1.hasExitTime = false;
 
-        // Transition: Walk -> Idle (Speed < 0.05)
         var t2 = walkState.AddTransition(idleState);
         t2.AddCondition(AnimatorConditionMode.Less, 0.05f, "Speed");
         t2.duration = 0.25f;

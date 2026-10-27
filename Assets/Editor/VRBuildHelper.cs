@@ -28,7 +28,7 @@ namespace MuseumVR.Editor
             GUILayout.Space(10);
             GUILayout.Label("CÔNG CỤ HỖ TRỢ BUILD APK CHO KÍNH VR (META QUEST)", EditorStyles.boldLabel);
             EditorGUILayout.HelpBox("Công cụ này giúp kiểm tra, tối ưu hóa cấu hình và xuất file APK chạy độc lập trên kính VR (Meta Quest 2, Quest 3, Quest Pro, Quest 3S).", MessageType.Info);
-            
+
             string projectRoot = Path.GetDirectoryName(Application.dataPath);
             if (HasNonAscii(projectRoot))
             {
@@ -46,22 +46,18 @@ namespace MuseumVR.Editor
 
             GUILayout.Space(10);
 
-            // 1. Kiểm tra Module Android
             DrawAndroidModuleCheck();
 
             GUILayout.Space(10);
 
-            // 2. Kiểm tra Cấu hình Project
             DrawSettingsCheck();
 
             GUILayout.Space(15);
 
-            // 3. Nút hành động
             DrawActionButtons();
 
             GUILayout.Space(15);
 
-            // 4. Hướng dẫn nạp vào kính VR
             DrawVRGuide();
 
             EditorGUILayout.EndScrollView();
@@ -80,7 +76,7 @@ namespace MuseumVR.Editor
             else
             {
                 EditorGUILayout.HelpBox("⚠ Unity 6 hiện TỰA CÀI module 'Android Build Support'.\n\nCách cài đặt nhanh:\n1. Mở Unity Hub.\n2. Vào tab 'Installs' -> Tìm phiên bản Unity 6000.5.9f1.\n3. Nhấn biểu tượng Bánh răng (⚙) -> Chọn 'Add modules'.\n4. Tích chọn: 'Android Build Support' (kèm Android SDK & NDK Tools và OpenJDK).\n5. Bấm Continue để cài đặt.", MessageType.Error);
-                
+
                 if (GUILayout.Button("Mở hướng dẫn tải Android Module trong Unity Hub", GUILayout.Height(30)))
                 {
                     Application.OpenURL("https://docs.unity3d.com/hub/manual/AddModules.html");
@@ -100,7 +96,7 @@ namespace MuseumVR.Editor
             DrawCheckItem("Hệ màu Linear Color Space", isColorSpaceLinear);
             DrawCheckItem("Scripting Backend: IL2CPP (Bắt buộc cho Quest)", isIL2CPP);
             DrawCheckItem("Target Architecture: ARM64 (Bắt buộc cho Quest)", isARM64);
-            DrawCheckItem("Min SDK <= Android 12L / API 32 (Khuyến nghị API 29)", isMinSdkValid, 
+            DrawCheckItem("Min SDK <= Android 12L / API 32 (Khuyến nghị API 29)", isMinSdkValid,
                 $"Hiện tại: {(int)PlayerSettings.Android.minSdkVersion}");
             DrawCheckItem("Tạo file APK (Tắt Build App Bundle / AAB)", !EditorUserBuildSettings.buildAppBundle);
 
@@ -185,7 +181,7 @@ namespace MuseumVR.Editor
         private void DrawVRGuide()
         {
             GUILayout.Label("4. Hướng dẫn cài đặt APK vào kính VR (Meta Quest)", EditorStyles.boldLabel);
-            
+
             EditorGUILayout.HelpBox(
                 "Cách 1: Dùng SideQuest (Đơn giản nhất):\n" +
                 "1. Tải phần mềm SideQuest trên PC (Advanced Installer).\n" +
@@ -199,35 +195,27 @@ namespace MuseumVR.Editor
 
         public static void ApplyQuestOptimizations()
         {
-            // 1. Chuyển Color Space sang Linear
             PlayerSettings.colorSpace = ColorSpace.Linear;
 
-            // 2. Cấu hình Scripting Backend & Architecture
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
 
-            // 3. Thiết lập SDK
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel29;
             PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevel34;
 
-            // 4. Định dạng file APK thay vì App Bundle
             EditorUserBuildSettings.buildAppBundle = false;
             EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
 
-            // 5. Package Identifier hợp lệ
             if (string.IsNullOrEmpty(PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Android)) ||
                 PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Android) == "com.DefaultCompany.VRTemplate")
             {
                 PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.BaoTangTayNguyen.VRApp");
             }
 
-            // 6. Graphics API: Đảm bảo Vulkan là ưu tiên
             PlayerSettings.SetGraphicsAPIs(BuildTarget.Android, new[] { GraphicsDeviceType.Vulkan, GraphicsDeviceType.OpenGLES3 });
 
-            // 7. Định dạng nén Texture ASTC tối ưu cho Quest
             EditorUserBuildSettings.androidBuildSubtarget = MobileTextureSubtarget.ASTC;
 
-            // 8. Chuyển sang Android Build Target nếu chưa chuyển
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
             {
                 EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
@@ -240,14 +228,12 @@ namespace MuseumVR.Editor
 
         public static void BuildQuestApk(bool autoRun)
         {
-            // Kiểm tra Android Build Support
             if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Android, BuildTarget.Android))
             {
                 EditorUtility.DisplayDialog("Lỗi", "Chưa cài đặt Android Build Support trong Unity. Vui lòng mở Unity Hub -> Installs -> Add Modules để cài đặt.", "OK");
                 return;
             }
 
-            // Kiểm tra đường dẫn chứa ký tự có dấu (Non-ASCII)
             string projectRoot = Path.GetDirectoryName(Application.dataPath);
             if (HasNonAscii(projectRoot))
             {
@@ -261,7 +247,6 @@ namespace MuseumVR.Editor
                 return;
             }
 
-            // Đảm bảo target là Android
             if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.Android)
             {
                 bool switchTarget = EditorUtility.DisplayDialog("Chuyển Platform", "Project cần chuyển Build Target sang Android trước khi build. Quá trình này có thể mất vài phút. Tiếp tục?", "Đồng ý", "Hủy");
@@ -270,7 +255,6 @@ namespace MuseumVR.Editor
                 EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Android, BuildTarget.Android);
             }
 
-            // Lấy danh sách Scene trong Build Settings
             var scenes = EditorBuildSettings.scenes;
             int enabledScenesCount = 0;
             foreach (var scene in scenes)

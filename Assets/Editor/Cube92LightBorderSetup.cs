@@ -17,7 +17,6 @@ namespace MuseumVR.Editor
                 var scene = EditorSceneManager.GetActiveScene();
                 if (!scene.isLoaded) return;
 
-                // Tự động kiểm tra và cấu hình nếu Cube (92) chưa có viền đèn
                 GameObject cube92 = FindCube92();
                 if (cube92 != null && cube92.GetComponent<CubeLightBorder>() == null)
                 {
@@ -45,14 +44,13 @@ namespace MuseumVR.Editor
 
             Undo.RegisterCompleteObjectUndo(cube92, "Setup Cube 92 Light Border and Sharpen Texture");
 
-            // 1. TẠO VIỀN ĐÈN CHO CUBE (92)
             CubeLightBorder border = cube92.GetComponent<CubeLightBorder>();
             if (border == null)
             {
                 border = Undo.AddComponent<CubeLightBorder>(cube92);
             }
 
-            border.ledColor = new Color(1.0f, 0.90f, 0.72f, 1.0f); // Ánh sáng vàng ấm hoàng gia sang trọng
+            border.ledColor = new Color(1.0f, 0.90f, 0.72f, 1.0f);
             border.emissionIntensity = 3.5f;
             border.borderThickness = 0.04f;
             border.borderDepth = 0.025f;
@@ -63,7 +61,6 @@ namespace MuseumVR.Editor
             border.BuildOrUpdateBorder();
             EditorUtility.SetDirty(cube92);
 
-            // 2. LÀM NÉT ẢNH TỪ XA CHO ẢNH GÁN VÀO CUBE (92)
             string textureName = "";
             Renderer rend = cube92.GetComponent<Renderer>();
             if (rend != null)
@@ -72,14 +69,12 @@ namespace MuseumVR.Editor
                 {
                     if (mat == null) continue;
 
-                    // Giảm độ bóng lóa của tranh
                     if (mat.HasProperty("_Smoothness"))
                     {
                         mat.SetFloat("_Smoothness", 0.30f);
                         EditorUtility.SetDirty(mat);
                     }
 
-                    // Tìm texture gán vào vật liệu
                     Texture tex = mat.mainTexture;
                     if (tex == null && mat.HasProperty("_BaseMap")) tex = mat.GetTexture("_BaseMap");
 
@@ -95,11 +90,9 @@ namespace MuseumVR.Editor
                 }
             }
 
-            // Đồng thời làm nét các ảnh mới import trong thư mục Assets/3d/nội thất
             SharpenTexture("Assets/3d/nội thất/images (1).jpg");
             SharpenTexture("Assets/3d/nội thất/images.jpg");
 
-            // Lưu Scene
             Scene activeScene = SceneManager.GetActiveScene();
             if (activeScene.isLoaded)
             {
@@ -157,7 +150,6 @@ namespace MuseumVR.Editor
             GameObject go = GameObject.Find("Cube (92)");
             if (go != null) return go;
 
-            // Tìm trong toàn bộ scene kể cả khi đang bị ẩn
             var allTransforms = Resources.FindObjectsOfTypeAll<Transform>();
             foreach (var t in allTransforms)
             {

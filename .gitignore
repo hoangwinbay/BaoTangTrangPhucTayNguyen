@@ -67,4 +67,16 @@ __pycache__/
 *.bak
 *.bak.meta
 
+# Classified exported files package
+PhanLoai_TepTin/
+
+# Office temporary lock files
+~$*.docx
+~$*.doc
+~$*.xlsx
+~$*.pptx
+
+
+
+ScriptBackups_*/
 

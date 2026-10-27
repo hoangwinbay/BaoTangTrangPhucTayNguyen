@@ -7,12 +7,10 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class NpcGizmoController
 {
-    // ClassID của NavMeshAgent trong Unity là 195
     private const int NavMeshAgentClassID = 195;
 
     static NpcGizmoController()
     {
-        // Tự động tắt Gizmo và đường quỹ đạo màu xanh của NavMeshAgent khi khởi động / compile
         EditorApplication.delayCall += () =>
         {
             SetGizmoState(NavMeshAgentClassID, false);

@@ -3,16 +3,11 @@ using UnityEditor;
 using System.IO;
 using System.Collections.Generic;
 
-/// <summary>
-/// Applies realistic materials to all wall and ceiling prefabs.
-/// Run from Unity Editor: Assets > Museum > Apply Realistic Materials to Prefabs
-/// </summary>
 public class ApplyMaterialsToPrefabs : EditorWindow
 {
     [MenuItem("Assets/Museum/Apply Realistic Materials to Prefabs")]
     public static void ApplyMaterials()
     {
-        // Load the new materials
         Material wallMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/LowPolyInterior2/Materials/MuseumWall_Realistic.mat");
         Material ceilingMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/LowPolyInterior2/Materials/MuseumCeiling_Realistic.mat");
         Material floorMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/LowPolyInterior2/Materials/MuseumFloor_Realistic.mat");
@@ -27,7 +22,6 @@ public class ApplyMaterialsToPrefabs : EditorWindow
         int ceilingCount = 0;
         int floorCount = 0;
 
-        // Process Wall prefabs
         string wallsPath = "Assets/LowPolyInterior2/Prefabs/Exterior/Walls";
         if (Directory.Exists(wallsPath))
         {
@@ -39,7 +33,6 @@ public class ApplyMaterialsToPrefabs : EditorWindow
             }
         }
 
-        // Process Ceiling prefabs
         string ceilingPath = "Assets/LowPolyInterior2/Prefabs/Exterior/Ceiling";
         if (Directory.Exists(ceilingPath))
         {
@@ -51,7 +44,6 @@ public class ApplyMaterialsToPrefabs : EditorWindow
             }
         }
 
-        // Process Floor prefabs
         string floorPath = "Assets/LowPolyInterior2/Prefabs/Exterior/Floor";
         if (Directory.Exists(floorPath) && floorMat != null)
         {
@@ -63,18 +55,17 @@ public class ApplyMaterialsToPrefabs : EditorWindow
             }
         }
 
-        // Also process any wall/ceiling objects in the main scene
         ApplyToSceneObjects(wallMat, ceilingMat, floorMat);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        EditorUtility.DisplayDialog("Materials Applied", 
+        EditorUtility.DisplayDialog("Materials Applied",
             $"Updated prefabs:\n" +
             $"- Walls: {wallCount}\n" +
             $"- Ceilings: {ceilingCount}\n" +
             $"- Floors: {floorCount}\n\n" +
-            "Scene objects have also been updated.", 
+            "Scene objects have also been updated.",
             "OK");
     }
 
@@ -85,19 +76,18 @@ public class ApplyMaterialsToPrefabs : EditorWindow
 
         bool modified = false;
         MeshRenderer[] renderers = prefab.GetComponentsInChildren<MeshRenderer>(true);
-        
+
         foreach (MeshRenderer renderer in renderers)
         {
             Material[] mats = renderer.sharedMaterials;
             bool rendererModified = false;
-            
+
             for (int i = 0; i < mats.Length; i++)
             {
                 if (mats[i] != null && mats[i] != newMaterial)
                 {
-                    // Check if this material should be replaced
                     string matName = mats[i].name.ToLower();
-                    if (matName.Contains("wall") || matName.Contains("museumwall") || 
+                    if (matName.Contains("wall") || matName.Contains("museumwall") ||
                         matName.Contains("museumceiling") || matName.Contains("lowpolyinterior2_main") ||
                         matName.Contains("interiortexture"))
                     {
@@ -107,7 +97,7 @@ public class ApplyMaterialsToPrefabs : EditorWindow
                     }
                 }
             }
-            
+
             if (rendererModified)
             {
                 renderer.sharedMaterials = mats;
@@ -118,7 +108,6 @@ public class ApplyMaterialsToPrefabs : EditorWindow
         if (modified)
         {
             EditorUtility.SetDirty(prefab);
-            // PrefabUtility.SavePrefabAsset(prefab); // This saves to disk
             Debug.Log($"Updated: {prefabPath}");
             return true;
         }
@@ -128,28 +117,27 @@ public class ApplyMaterialsToPrefabs : EditorWindow
 
     static void ApplyToSceneObjects(Material wallMat, Material ceilingMat, Material floorMat)
     {
-        // Find all MeshRenderers in the scene
         MeshRenderer[] allRenderers = FindObjectsOfType<MeshRenderer>();
-        
+
         foreach (MeshRenderer renderer in allRenderers)
         {
             Material[] mats = renderer.sharedMaterials;
             bool modified = false;
-            
+
             for (int i = 0; i < mats.Length; i++)
             {
                 if (mats[i] != null)
                 {
                     string matName = mats[i].name.ToLower();
                     Material replacement = null;
-                    
+
                     if (matName.Contains("wall") || matName.Contains("museumwall"))
                         replacement = wallMat;
                     else if (matName.Contains("ceiling") || matName.Contains("museumceiling"))
                         replacement = ceilingMat;
                     else if (matName.Contains("floor") || matName.Contains("museumfloor") || matName.Contains("images"))
                         replacement = floorMat;
-                    
+
                     if (replacement != null && mats[i] != replacement)
                     {
                         mats[i] = replacement;
@@ -157,22 +145,20 @@ public class ApplyMaterialsToPrefabs : EditorWindow
                     }
                 }
             }
-            
+
             if (modified)
             {
                 renderer.sharedMaterials = mats;
                 EditorUtility.SetDirty(renderer);
             }
         }
-        
-        // Save scene
+
         UnityEditor.SceneManagement.EditorSceneManager.SaveOpenScenes();
     }
-    
+
     [MenuItem("Assets/Museum/Revert Material Changes (Undo)")]
     public static void RevertMaterials()
     {
-        // Load original materials
         Material origWallMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/LowPolyInterior2/Materials/MuseumWallMatte.mat");
         Material origCeilingMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/LowPolyInterior2/Materials/MuseumCeilingMatte.mat");
         Material origFloorMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Floor/Materials/images.mat");
@@ -185,7 +171,6 @@ public class ApplyMaterialsToPrefabs : EditorWindow
 
         int count = 0;
 
-        // Revert Wall prefabs
         string wallsPath = "Assets/LowPolyInterior2/Prefabs/Exterior/Walls";
         if (Directory.Exists(wallsPath))
         {
@@ -197,7 +182,6 @@ public class ApplyMaterialsToPrefabs : EditorWindow
             }
         }
 
-        // Revert Ceiling prefabs
         string ceilingPath = "Assets/LowPolyInterior2/Prefabs/Exterior/Ceiling";
         if (Directory.Exists(ceilingPath))
         {
@@ -209,7 +193,6 @@ public class ApplyMaterialsToPrefabs : EditorWindow
             }
         }
 
-        // Revert Floor prefabs
         string floorPath = "Assets/LowPolyInterior2/Prefabs/Exterior/Floor";
         if (Directory.Exists(floorPath) && origFloorMat != null)
         {
@@ -221,7 +204,6 @@ public class ApplyMaterialsToPrefabs : EditorWindow
             }
         }
 
-        // Revert scene objects
         RevertSceneObjects(origWallMat, origCeilingMat, origFloorMat);
 
         AssetDatabase.SaveAssets();
@@ -237,18 +219,18 @@ public class ApplyMaterialsToPrefabs : EditorWindow
 
         bool modified = false;
         MeshRenderer[] renderers = prefab.GetComponentsInChildren<MeshRenderer>(true);
-        
+
         foreach (MeshRenderer renderer in renderers)
         {
             Material[] mats = renderer.sharedMaterials;
             bool rendererModified = false;
-            
+
             for (int i = 0; i < mats.Length; i++)
             {
                 if (mats[i] != null && mats[i] != originalMaterial)
                 {
                     string matName = mats[i].name.ToLower();
-                    if (matName.Contains("museumwall") || matName.Contains("museumceiling") || 
+                    if (matName.Contains("museumwall") || matName.Contains("museumceiling") ||
                         matName.Contains("museumfloor") || matName.Contains("realistic"))
                     {
                         mats[i] = originalMaterial;
@@ -257,7 +239,7 @@ public class ApplyMaterialsToPrefabs : EditorWindow
                     }
                 }
             }
-            
+
             if (rendererModified)
             {
                 renderer.sharedMaterials = mats;
@@ -277,26 +259,26 @@ public class ApplyMaterialsToPrefabs : EditorWindow
     static void RevertSceneObjects(Material wallMat, Material ceilingMat, Material floorMat)
     {
         MeshRenderer[] allRenderers = FindObjectsOfType<MeshRenderer>();
-        
+
         foreach (MeshRenderer renderer in allRenderers)
         {
             Material[] mats = renderer.sharedMaterials;
             bool modified = false;
-            
+
             for (int i = 0; i < mats.Length; i++)
             {
                 if (mats[i] != null)
                 {
                     string matName = mats[i].name.ToLower();
                     Material replacement = null;
-                    
+
                     if (matName.Contains("museumwall") || matName.Contains("realistic"))
                         replacement = wallMat;
                     else if (matName.Contains("museumceiling") || matName.Contains("realistic"))
                         replacement = ceilingMat;
                     else if (matName.Contains("museumfloor") || matName.Contains("realistic"))
                         replacement = floorMat;
-                    
+
                     if (replacement != null && mats[i] != replacement)
                     {
                         mats[i] = replacement;
@@ -304,14 +286,14 @@ public class ApplyMaterialsToPrefabs : EditorWindow
                     }
                 }
             }
-            
+
             if (modified)
             {
                 renderer.sharedMaterials = mats;
                 EditorUtility.SetDirty(renderer);
             }
         }
-        
+
         UnityEditor.SceneManagement.EditorSceneManager.SaveOpenScenes();
     }
 }

@@ -3,9 +3,6 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using Unity.XR.CoreUtils;
 
-/// <summary>
-/// Công cụ thiết lập nhanh XR Hands (Hand Tracking) cho dự án Bảo tàng Tây Nguyên.
-/// </summary>
 public static class MuseumXRHandSetup
 {
     private const string HandsRigPrefabPath = "Assets/Samples/XR Interaction Toolkit/3.5.1/Hands Interaction Demo/Prefabs/XR Origin Hands (XR Rig).prefab";
@@ -14,7 +11,6 @@ public static class MuseumXRHandSetup
     [MenuItem("Tools/Bảo Tàng/XR Hands/1. Cài đặt XR Origin Hands vào Scene", false, 1)]
     public static void SetupXRHandRigInScene()
     {
-        // 1. Tải Prefab XR Origin Hands
         GameObject handRigPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(HandsRigPrefabPath);
         if (handRigPrefab == null)
         {
@@ -22,7 +18,6 @@ public static class MuseumXRHandSetup
             return;
         }
 
-        // 2. Tìm vị trí người chơi hiện tại (từ Rig cũ hoặc FPSController hoặc Camera)
         Vector3 spawnPos = Vector3.zero;
         Quaternion spawnRot = Quaternion.identity;
 
@@ -32,7 +27,6 @@ public static class MuseumXRHandSetup
             spawnPos = existingOrigin.transform.position;
             spawnRot = existingOrigin.transform.rotation;
 
-            // Xóa Rig cũ để thay bằng Hand Rig
             Undo.DestroyObjectImmediate(existingOrigin.gameObject);
             Debug.Log("[XR Hands Setup] Đã gỡ bỏ XR Origin cũ để nâng cấp lên XR Origin Hands.");
         }
@@ -51,21 +45,18 @@ public static class MuseumXRHandSetup
             }
         }
 
-        // 3. Khởi tạo XR Origin Hands (XR Rig) vào Scene
         GameObject newRig = (GameObject)PrefabUtility.InstantiatePrefab(handRigPrefab);
         newRig.name = "XR Origin Hands (XR Rig)";
         newRig.transform.position = spawnPos;
         newRig.transform.rotation = spawnRot;
         Undo.RegisterCreatedObjectUndo(newRig, "Instantiate XR Origin Hands");
 
-        // Đảm bảo tag MainCamera
         XROrigin newOrigin = newRig.GetComponent<XROrigin>();
         if (newOrigin != null && newOrigin.Camera != null)
         {
             newOrigin.Camera.tag = "MainCamera";
         }
 
-        // Đánh dấu Scene đã thay đổi để lưu
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         Selection.activeGameObject = newRig;
 

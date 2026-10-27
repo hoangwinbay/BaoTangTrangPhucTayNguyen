@@ -15,7 +15,6 @@ public static class ApplyDaVanMaterial
     {
         EditorApplication.delayCall += () =>
         {
-            // Không chạy trong Play Mode — MarkSceneDirty/SaveScene không được phép lúc play
             if (EditorApplication.isPlayingOrWillChangePlaymode) return;
             Apply(showDialog: false);
         };
@@ -29,13 +28,10 @@ public static class ApplyDaVanMaterial
 
     public static void Apply(bool showDialog = false)
     {
-        // Không thực thi trong Play Mode — các API Editor (MarkSceneDirty, SaveScene) không hợp lệ lúc play
         if (EditorApplication.isPlayingOrWillChangePlaymode) return;
 
-        // 1. Configure texture import settings
         ConfigureTextures();
 
-        // 2. Create or load the URP Lit material
         Material mat = CreateOrUpdateMaterial();
         if (mat == null)
         {
@@ -43,7 +39,6 @@ public static class ApplyDaVanMaterial
             return;
         }
 
-        // 3. Target cubes
         string[] targetCubes = new string[]
         {
             "Cube (33)",
@@ -59,7 +54,6 @@ public static class ApplyDaVanMaterial
             GameObject go = GameObject.Find(name);
             if (go == null)
             {
-                // Try finding among inactive objects as well
                 GameObject[] all = Resources.FindObjectsOfTypeAll<GameObject>();
                 foreach (var obj in all)
                 {
@@ -94,7 +88,6 @@ public static class ApplyDaVanMaterial
             }
         }
 
-        // 4. Save active scene
         Scene activeScene = SceneManager.GetActiveScene();
         if (activeScene.isLoaded)
         {
@@ -103,7 +96,6 @@ public static class ApplyDaVanMaterial
             Debug.Log($"[DaVan] Scene {activeScene.name} saved successfully.");
         }
 
-        // 5. Render a preview screenshot to check result
         CapturePreviewScreenshot();
 
         string message = $"Đã áp dụng thành công vật liệu Đá Vân (DaVan_Stone) cho {count}/5 bệ Cube (33, 34, 35, 37, 38)!\n\n" +
@@ -183,12 +175,10 @@ public static class ApplyDaVanMaterial
             mat.SetFloat("_BumpScale", 0.85f);
         }
 
-        // Realistic polished stone settings
         mat.SetFloat("_Smoothness", 0.55f);
         mat.SetFloat("_Metallic", 0.0f);
         mat.SetColor("_BaseColor", Color.white);
 
-        // Subtly tile texture so it doesn't stretch
         mat.SetTextureScale("_BaseMap", new Vector2(2f, 1f));
         mat.SetTextureScale("_BumpMap", new Vector2(2f, 1f));
 
@@ -211,7 +201,6 @@ public static class ApplyDaVanMaterial
             cam.nearClipPlane = 0.1f;
             cam.farClipPlane = 100f;
 
-            // Position camera looking at Cube (33) and nearby cubes
             cam.transform.position = target.transform.position + new Vector3(-4f, 1.5f, -3f);
             cam.transform.LookAt(target.transform.position);
 

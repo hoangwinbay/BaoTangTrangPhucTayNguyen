@@ -4,25 +4,18 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-// Tự động chuẩn hóa mô hình trang phục (.glb trong Assets/3d) về chiều cao của player
-// ngay khi được kéo vào scene. Kèm menu Tools > Bảo tàng để chỉnh thủ công cho mọi object.
 static class MuseumModelScaler
 {
-    // ===== CHỈNH THÔNG SỐ Ở ĐÂY =====
-    const float TargetHeight = 1.7f;   // chiều cao player mong muốn (mét)
-    const float FloorY = 0f;           // độ cao mặt sàn dùng cho lệnh "đặt chân chạm sàn"
+    const float TargetHeight = 1.7f;
+    const float FloorY = 0f;
     const string ModelFolder = "Assets/3d";
-    // ================================
 
     static readonly HashSet<Object> processed = new HashSet<Object>();
     static HashSet<string> knownModelNames;
     static bool markOnlyNextScan = true;
 
-    // [InitializeOnLoadMethod] // ĐÃ TẮT: Tự động chạy ngầm làm biến dạng cửa, tường và phóng to camera/bàn ghế lên 1.7m
     static void Init()
     {
-        // EditorApplication.hierarchyChanged += QueueScan;
-        // SceneManager.sceneLoaded += (s, m) => markOnlyNextScan = true;
     }
 
     static void QueueScan()
@@ -91,7 +84,6 @@ static class MuseumModelScaler
                       (snapFeetToFloor ? ", chân chạm sàn y=" + FloorY : ""), go);
     }
 
-    // Chọn object trong Hierarchy rồi dùng menu (hoặc Ctrl+Alt+N / Ctrl+Alt+M)
     [MenuItem("Tools/Bảo tàng/Mô hình — chuẩn hóa theo player &#n")]
     static void NormalizeSelected()
     {
